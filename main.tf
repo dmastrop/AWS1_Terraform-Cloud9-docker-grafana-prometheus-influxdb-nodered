@@ -122,11 +122,11 @@ resource "docker_container" "nodered_container-2" {
 ### Generate some ouputs
 # https://developer.hashicorp.com/terraform/language/values/outputs
 
-output "IP_address" {
+##output "IP_address" {
 # outputs cannot contain spaces in name in newer versions
-  value = docker_container.nodered_container.ip_address
-  description = "the IP address of the nodered container"
-}
+##  value = docker_container.nodered_container.ip_address
+##  description = "the IP address of the nodered container"
+##}
 
 #output "Container_name" {
 #  value = docker_container.nodered_container.name
@@ -151,6 +151,6 @@ output "IP_address_and_port_1" {
 
 output "IP_address_and_port_2" {
 # outputs cannot contain spaces in name in newer versions
-  value = join(":", [docker_container.nodered_container.ip_address, docker_container.nodered_container-2.ports[0].external])
+  value = join(":", [docker_container.nodered_container-2.ip_address, docker_container.nodered_container-2.ports[0].external])
   description = "the IP address and port of the nodered container"
 }
