@@ -42,6 +42,12 @@ resource "random_string" "random" {
   upper = false
 }
 
+resource "random_string" "random2" {
+  length = 4
+  special = false
+  upper = false
+}
+
 
 
 
@@ -49,8 +55,10 @@ resource "random_string" "random" {
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
 resource "docker_container" "nodered_container" {
-  name = "nodered"
+  #name = "nodered"
   # this is a logical value for referencing only.
+  # randomize the name:
+  name = join("-", ["nodered", random_string.random.result])
   
   
   image = docker_image.nodered_image.latest
@@ -79,8 +87,10 @@ resource "docker_container" "nodered_container" {
 
 ## second docker container
 resource "docker_container" "nodered_container-2" {
-  name = "nodered-2"
+  #name = "nodered-2"
   # this is a logical value for referencing only.
+  # randomize the name:
+  name = join("-", ["nodered", random_string.random2.result])
   
   
   image = docker_image.nodered_image.latest
@@ -110,6 +120,7 @@ resource "docker_container" "nodered_container-2" {
 
 
 ### Generate some ouputs
+# https://developer.hashicorp.com/terraform/language/values/outputs
 
 output "IP_address" {
 # outputs cannot contain spaces in name in newer versions
@@ -117,13 +128,29 @@ output "IP_address" {
   description = "the IP address of the nodered container"
 }
 
-output "Container_name" {
+#output "Container_name" {
+#  value = docker_container.nodered_container.name
+#  description = "this is the name of the container"
+#}
+
+output "Container_name1" {
   value = docker_container.nodered_container.name
   description = "this is the name of the container"
 }
 
-output "IP_address_and_port" {
+output "Container_name2" {
+  value = docker_container.nodered_container-2.name
+  description = "this is the name of the container-2"
+}
+
+output "IP_address_and_port_1" {
 # outputs cannot contain spaces in name in newer versions
   value = join(":", [docker_container.nodered_container.ip_address, docker_container.nodered_container.ports[0].external])
+  description = "the IP address and port of the nodered container"
+}
+
+output "IP_address_and_port_2" {
+# outputs cannot contain spaces in name in newer versions
+  value = join(":", [docker_container.nodered_container.ip_address, docker_container.nodered_container-2.ports[0].external])
   description = "the IP address and port of the nodered container"
 }
