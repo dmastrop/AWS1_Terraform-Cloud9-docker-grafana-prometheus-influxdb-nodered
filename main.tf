@@ -164,17 +164,29 @@ resource "docker_container" "nodered_container" {
 # what we need here is to indext the resource docker_container.nodered_container by index, ie
 # resource docker_container.nodered_container[0] and resource docker_container.nodered_container[1]
 
-  output "Container_name1" {
+# output "Container_name1" {
+#   #value = docker_container.nodered_container.name
+#   value = docker_container.nodered_container[0].name
+#   description = "this is the name of the container"
+# }
+
+# output "Container_name2" {
+#   #value = docker_container.nodered_container-2.name
+#   value = docker_container.nodered_container[1].name
+#   description = "this is the name of the container-2"
+# }
+
+# replace the above 2 blocks for the name with a single block using the splat
+# https://developer.hashicorp.com/terraform/language/expressions/splat
+output "Container_names" {
   #value = docker_container.nodered_container.name
-  value = docker_container.nodered_container[0].name
-  description = "this is the name of the container"
+  value = docker_container.nodered_container[*].name
+  description = "this is the names of the containers"
 }
 
-output "Container_name2" {
-  #value = docker_container.nodered_container-2.name
-  value = docker_container.nodered_container[1].name
-  description = "this is the name of the container-2"
-}
+
+
+
 
 output "IP_address_and_port_1" {
 # outputs cannot contain spaces in name in newer versions
