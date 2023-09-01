@@ -37,7 +37,7 @@ resource "docker_image" "nodered_image" {
 # use random resource to generate unique names for the multi-container deployment
 # https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
 resource "random_string" "random" {
-  count =2
+  count = 1
   # add count to get the 2 random_string resources rather than adding them one by one.
   length = 4
   special = false
@@ -59,7 +59,7 @@ resource "random_string" "random" {
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
 resource "docker_container" "nodered_container" {
-  count = 2
+  count = 1
   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
 
   #name = "nodered"
@@ -77,10 +77,16 @@ resource "docker_container" "nodered_container" {
   # "latest" can be referenced from other resources as a single image.  This seems to work only with docker 2.15.0
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image
   
-  # for docker 3.0.2 use image_id
+  # for docker 3.0.2 use image_id. Minimum version to support this syntax is 2.21.0 so use version = "~> 2.21.0" in the 
+  # docker provider block if want to use this syntax.   I am on 2.15.0 and this new syntax will not work (error)
+  # https://stackoverflow.com/questions/73451024/where-to-find-information-about-the-following-terraform-provider-attribute-depre
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image#read-only
   # image = docker_image.nodered_image.image_id
   ##image = docker_image.nodered_image.image_id
+
+  
+  
+  
 
   # ports will need to be exposed on this container
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container
