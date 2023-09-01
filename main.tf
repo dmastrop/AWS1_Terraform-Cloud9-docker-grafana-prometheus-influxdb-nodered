@@ -37,7 +37,7 @@ resource "docker_image" "nodered_image" {
 # use random resource to generate unique names for the multi-container deployment
 # https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
 resource "random_string" "random" {
-  count = 2
+  count = 1
   # add count to get the 2 random_string resources rather than adding them one by one.
   length = 4
   special = false
@@ -59,7 +59,7 @@ resource "random_string" "random" {
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
 resource "docker_container" "nodered_container" {
-  count = 2
+  count = 1
   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
 
   #name = "nodered"
