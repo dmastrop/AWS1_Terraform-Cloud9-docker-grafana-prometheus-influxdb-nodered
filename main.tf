@@ -84,9 +84,6 @@ resource "docker_container" "nodered_container" {
   # image = docker_image.nodered_image.image_id
   ##image = docker_image.nodered_image.image_id
 
-  
-  
-  
 
   # ports will need to be exposed on this container
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container
@@ -103,6 +100,27 @@ resource "docker_container" "nodered_container" {
 }  
 
 
+
+## this resource was created because the terraform state got out of synch due to a test scenario.
+## this is no longer needed.
+## the reference documentation on this is https://developer.hashicorp.com/terraform/cli/import
+## this resource must be created to do the import of the extraneous resources that are out of state
+## FROM THE DOCUMENTATION
+  # The terraform import CLI command can only import resources into the state. 
+  # Importing via the CLI does not generate configuration. If you want to generate the accompanying configuration for imported resources, 
+  # use the import block instead.
+  # Before you run terraform import you must manually write a resource configuration block for the resource. 
+  # The resource block describes where Terraform should map the imported object
+
+# resource "docker_container" "nodered_container_import" {
+#   name = "nodered-wo5o"
+#   # this is the remaining container after the out of state condition following a delete. We need to import this container so that
+#   # it can be properly deleted by terraform. To do this we have to import it into the terraform state
+#   # https://developer.hashicorp.com/terraform/cli/import
+#   # this is the docker ps of the remaining container:
+#   # c0d5f11a3635   c18405a73444   "./entrypoint.sh"   45 minutes ago   Up 45 minutes (healthy)   0.0.0.0:32776->1880/tcp   nodered-wo5o
+#   image = docker_image.nodered_image.latest
+# }
 
 
 
