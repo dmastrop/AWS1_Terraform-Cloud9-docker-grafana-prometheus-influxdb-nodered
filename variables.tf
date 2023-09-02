@@ -9,7 +9,9 @@
 variable "ext_port" {
 # the name is up to you
   type = number
-  default = 1880
+  
+  # as a test comment out the default and put ext_port = 1880 in terraform.tfvars so that it does not get published to the githhub commit and repo.
+  #default = 1880
   
   validation {
     condition = var.ext_port <= 65535 && var.ext_port > 0

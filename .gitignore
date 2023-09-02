@@ -24,3 +24,6 @@ crash.log
 
 # Ansible
 *.retry
+
+# terraform tfvars files
+*.tfvars
