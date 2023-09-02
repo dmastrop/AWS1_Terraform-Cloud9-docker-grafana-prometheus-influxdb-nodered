@@ -26,6 +26,37 @@ provider "docker" {}
 # this instantiates the docker provider itself
 
 
+
+
+
+
+## variables definitions
+## https://developer.hashicorp.com/terraform/language/values/variables
+variable "ext_port" {
+  type = number
+  default = 1880
+}
+# the name is up to you.
+
+variable "container_count" {
+  type = number
+  default = 1
+}
+
+variable "internal_port" {
+  type = number
+  #default = 1880
+  default = 1881
+  
+  validation {
+    condition = var.internal_port == 1880
+    error_message = "The internal port must be 1880"
+  }
+}
+
+
+
+
 # https://registry.terraform.io/providers/kreuzwerker/docker/2.15.0/docs/resources/image
 resource "docker_image" "nodered_image" {
   # name of the image itself. This is the docker hub name reference not an arbitrary name that we are assigning.
@@ -37,8 +68,10 @@ resource "docker_image" "nodered_image" {
 # use random resource to generate unique names for the multi-container deployment
 # https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
 resource "random_string" "random" {
-  count = 2
+  #count = 2
   # add count to get the 2 random_string resources rather than adding them one by one.
+  count = var.container_count
+  
   length = 4
   special = false
   upper = false
@@ -59,8 +92,9 @@ resource "random_string" "random" {
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
 resource "docker_container" "nodered_container" {
-  count = 2
+  #count = 2
   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
+  count = var.container_count
 
   #name = "nodered"
   # this is a logical value for referencing only.
@@ -92,10 +126,14 @@ resource "docker_container" "nodered_container" {
   # ip (String) IP address/mask that can access this port. Defaults to 0.0.0.0.; protocol (String) Protocol that can be used over this port. Defaults to tcp.
   ports {
     # ports is a nested schema
-    internal = 1880
+    #internal = 1880
     # terraform refers to this as a number and not an integer.  1880 is the nodered listening port.  See documentation
+    internal = var.internal_port
     #external = 1880
     # if we comment out the external port, docker will automatically choose external port for you
+    # for varaibles testing uncomment this out.  var.ext_port refers to the varaible specified above.
+    external = var.ext_port
+    
   }
 }  
 
