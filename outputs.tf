@@ -77,4 +77,10 @@ output "Container_names" {
   # Thus alternate syntax: [for i in docker_container.nodered_container[*]: join(":", [i.ip_address], [i.ports[0]["external"]])]
   
   description = "the IP address and external port of each nodered container"
+  
+  # we added senstive = true to the varaibles.tf "ext_port" variable definition (this masked the external port in the output of terraform apply)
+  # ...and this now requires us to add the sensitive=true
+  # to the outputs.tf in this location to mask the data in the outputs as well.  The apply will not go through until this is also added.
+  sensitive = true
+  
 }

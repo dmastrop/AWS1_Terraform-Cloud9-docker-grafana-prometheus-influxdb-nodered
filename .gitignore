@@ -16,6 +16,8 @@ aws_hosts
 
 # .tfstate files
 # we don't have these right now because terraform state is backed up to terraform cloud
+# as illustrated even with resources and variables flagged with senstive = true, the tfstate files will still have this sensitive data
+# It is ideal to put the state on secure cloud (like terraform cloud).  The tfstate has been excluded from the git repo as shown below:
 *.tfstate
 *.tfstate.*
 
@@ -25,5 +27,5 @@ crash.log
 # Ansible
 *.retry
 
-# terraform tfvars files
+# terraform tfvars files. These have sensitive variable information.
 *.tfvars

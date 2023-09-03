@@ -10,6 +10,10 @@ variable "ext_port" {
 # the name is up to you
   type = number
   
+  # flag this variable as senitive to hide values from terraform terminal display.
+  # 
+  sensitive = true
+  
   # as a test comment out the default and put ext_port = 1880 in terraform.tfvars so that it does not get published to the githhub commit and repo.
   #default = 1880
   
