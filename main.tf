@@ -26,7 +26,18 @@ provider "docker" {}
 # this instantiates the docker provider itself
 
 
-
+resource "null_resource" "docker_volume" {
+# https://developer.hashicorp.com/terraform/language/v1.1.x/resources/provisioners/local-exec
+  provisioner "local-exec" {
+    command = "mkdir noderedvol/ && sudo chown -R 1000:1000 noderedvol/"
+    # note the nodered documentation: the volume must be mounted to docker container /data directory and the following::
+     # https://nodered.org/docs/getting-started/docker
+     # Using a Host Directory for Persistence (Bind Mount)
+     # Note: "Users migrating from version 0.20 to 1.0 will need to ensure that any existing /data directory has the correct ownership. 
+     # As of 1.0 this needs to be 1000:1000. 
+     # This can be forced by the command sudo chown -R 1000:1000 path/to/your/node-red/data
+  }
+}
 
 
 # ### moved all of the variables code from main.tf to variables.tf (single hash # comment is the final code for this here)
@@ -138,13 +149,21 @@ resource "docker_container" "nodered_container" {
   # ip (String) IP address/mask that can access this port. Defaults to 0.0.0.0.; protocol (String) Protocol that can be used over this port. Defaults to tcp.
   ports {
     # ports is a nested schema
+    
+    
     #internal = 1880
     # terraform refers to this as a number and not an integer.  1880 is the nodered listening port.  See documentation
     internal = var.internal_port
+    
+    
     #external = 1880
     # if we comment out the external port, docker will automatically choose external port for you
     # for varaibles testing uncomment this out.  var.ext_port refers to the varaible specified above.
     external = var.ext_port
+    
+    # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
+    # both external ports are dynamically provisioned by docker if using a count > 1.
+    # For now we are using count =1 and this setting with var.ext_port is fine....
     
   }
 }  
