@@ -29,13 +29,16 @@ provider "docker" {}
 resource "null_resource" "docker_volume" {
 # https://developer.hashicorp.com/terraform/language/v1.1.x/resources/provisioners/local-exec
   provisioner "local-exec" {
-    command = "mkdir noderedvol/ && sudo chown -R 1000:1000 noderedvol/"
+    command = "mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
     # note the nodered documentation: the volume must be mounted to docker container /data directory and the following::
      # https://nodered.org/docs/getting-started/docker
      # Using a Host Directory for Persistence (Bind Mount)
      # Note: "Users migrating from version 0.20 to 1.0 will need to ensure that any existing /data directory has the correct ownership. 
      # As of 1.0 this needs to be 1000:1000. 
      # This can be forced by the command sudo chown -R 1000:1000 path/to/your/node-red/data
+     
+     # the "|| true"logic makes this more idempotent, so that RC=0 is returned and even though it still fails to create the directory again, 
+     # it will not error out and fail the terraform apply.
   }
 }
 
@@ -164,13 +167,22 @@ resource "docker_container" "nodered_container" {
     # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
     # both external ports are dynamically provisioned by docker if using a count > 1.
     # For now we are using count =1 and this setting with var.ext_port is fine....
-    
   }
+  
+  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
+  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
+  volumes {
+    container_path = "/data"
+    # this is per the nodered documentation. See above notes in the null_resource
+    host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
+    # this is the fully qualified path to the volume in my workspace
+  }
+  
 }  
 
 
 
-## this resource was created because the terraform state got out of synch due to a test scenario.
+## this resource (below) was created because the terraform state got out of synch due to a test scenario.
 ## this is no longer needed.
 ## the reference documentation on this is https://developer.hashicorp.com/terraform/cli/import
 ## this resource must be created to do the import of the extraneous resources that are out of state
