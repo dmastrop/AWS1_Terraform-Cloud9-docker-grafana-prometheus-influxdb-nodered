@@ -8,7 +8,10 @@
 ## https://developer.hashicorp.com/terraform/language/expressions/custom-conditions#input-variable-validation
 variable "ext_port" {
 # the name is up to you
-  type = number
+  #type = number
+  
+  type = list
+  # change type to list now that terraform.tfvars is specifying the ext_port as a [list], [1880] to start.
   
   # flag this variable as senitive to hide values from terraform terminal display.
   # this is a test. This will also need to be done in the outputs.tf because that also displays this variable.
@@ -23,17 +26,45 @@ variable "ext_port" {
   # and only the first container will get created.
   # If count =1 we can use this varaible at 1880.
   
-  validation {
-    condition = var.ext_port <= 65535 && var.ext_port > 0
-    error_message = "The external port range must be in the valid port range 0 - 65535."
-  }
+  
+  
+  
+#   validation {
+#     condition = var.ext_port <= 65535 && var.ext_port > 0
+#     error_message = "The external port range must be in the valid port range 0 - 65535."
+#   }
+
+
 }
 
 
-variable "container_count" {
-  type = number
-  default = 1
+
+
+
+# variable "container_count" {
+#   type = number
+#   #default = 1
+#   # change this to 3 for the multi-conatiner case with determinstic var.ext_port specified in terraform.tfvars.
+#   default = 3
+  
+#   # to align this to the port count in terraform.tfvars list we can try
+#   # default = length(var.ext_port) but function calls are not allowed on variables in terrafomr.
+#   #default = length(var.ext_port)
+  
+#   #the solution is to create a local value (see below)
+#   # https://developer.hashicorp.com/terraform/language/values/locals
+  
+# }
+
+## comment out the above
+## local value to replace the varaible "container_count" so that we can incorporate a function call and make this 
+## locals container_count more extensible to the multiple ext_port multi-container scenario
+# with locals we can align the number of external ports in terraform.tfvars to the count through this same "length" function call.
+## https://developer.hashicorp.com/terraform/language/values/locals
+locals {
+  container_count = length(var.ext_port)
 }
+
 
 
 variable "internal_port" {

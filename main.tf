@@ -96,7 +96,12 @@ resource "docker_image" "nodered_image" {
 resource "random_string" "random" {
   #count = 2
   # add count to get the 2 random_string resources rather than adding them one by one.
-  count = var.container_count
+  #count = var.container_count
+  
+  # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
+  # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
+  # same needs to be done in the docker_container resource below.
+  count = local.container_count
   
   length = 4
   special = false
@@ -120,7 +125,18 @@ resource "random_string" "random" {
 resource "docker_container" "nodered_container" {
   #count = 2
   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
-  count = var.container_count
+ # count = var.container_count
+  
+  # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
+  # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
+  # same needs to be done in the random_string resource above.
+  count = local.container_count
+  
+  
+  
+  
+  
+  
 
   #name = "nodered"
   # this is a logical value for referencing only.
@@ -160,9 +176,17 @@ resource "docker_container" "nodered_container" {
     
     
     #external = 1880
+    
     # if we comment out the external port, docker will automatically choose external port for you
     # for varaibles testing uncomment this out.  var.ext_port refers to the varaible specified above.
-    external = var.ext_port
+    #external = var.ext_port
+    
+    # start adding mutliple ports. First define ext_port as a list
+    #external = var.ext_port[0]
+    
+    # Next add count.index to make this extensible for multiple containers. First container has index of 0, second has index of 1, and so on....
+    external = var.ext_port[count.index]
+  
     
     # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
     # both external ports are dynamically provisioned by docker if using a count > 1.
