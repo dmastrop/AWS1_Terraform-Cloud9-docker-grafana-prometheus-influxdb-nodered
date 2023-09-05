@@ -198,11 +198,22 @@ resource "docker_container" "nodered_container" {
   volumes {
     container_path = "/data"
     # this is per the nodered documentation. See above notes in the null_resource
-    host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
+    ## host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
     # this is the fully qualified path to the volume in my workspace
+    
+    # we need to make this host_path dynamic in case the directory of this noderedvol changes.
+    # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
+    # https://developer.hashicorp.com/terraform/language/expressions/references
+    # https://developer.hashicorp.com/terraform/language/expressions/strings
+    # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+    host_path = "${path.cwd}/noderedvol"
   }
   
 }  
+
+
+
+
 
 
 

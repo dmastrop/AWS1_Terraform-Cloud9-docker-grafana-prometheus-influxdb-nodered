@@ -29,12 +29,17 @@ variable "ext_port" {
   
   
   
-#   validation {
-#     condition = var.ext_port <= 65535 && var.ext_port > 0
-#     error_message = "The external port range must be in the valid port range 0 - 65535."
-#   }
+  # validation {
+  #   condition = var.ext_port <= 65535 && var.ext_port > 0
+  #   error_message = "The external port range must be in the valid port range 0 - 65535."
+  # }
 
-
+  validation {
+    condition = max(var.ext_port...) <= 65535 && min(var.ext_port...) > 0
+    error_message = "The external port range must be in the valid port range 0 - 65535."
+  }
+  # https://developer.hashicorp.com/terraform/language/expressions/function-calls#expanding-function-arguments
+  # https://developer.hashicorp.com/terraform/language/functions/max
 }
 
 
@@ -63,6 +68,7 @@ variable "ext_port" {
 ## https://developer.hashicorp.com/terraform/language/values/locals
 locals {
   container_count = length(var.ext_port)
+  # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
 }
 
 
