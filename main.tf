@@ -93,7 +93,7 @@ resource "docker_image" "nodered_image" {
   # the first is the value and the second is the key into the apped variable var.image.  var.env=dev will key into image:latest
   # and var.env=prod will key into image:latest-minimal
   # NOTE: we do not need {} around var.image because that is already a map with the {} in the variable definition (see variables.tf)
-  name = "lookup(var.image, var.env)"
+  name = lookup(var.image, var.env)
 }
 
 
