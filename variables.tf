@@ -6,6 +6,34 @@
 ## validation rules for variables:
 ## https://developer.hashicorp.com/terraform/language/values/variables#custom-validation-rules
 ## https://developer.hashicorp.com/terraform/language/expressions/custom-conditions#input-variable-validation
+
+
+
+# this is the environment varaible, i.e. production (prod) vs. development (dev)
+variable "env" {
+  type = string
+  description = "The environment to deploy to"
+  default = "dev"
+  # if the env is not specified we definitely do not want to deploy to prod. Put default at dev.
+}
+
+
+
+variable "image" {
+  # need to set up a map for the image for both dev and prod
+  type = map
+  description = "image for the container based upon deployment env"
+  default = {
+    dev = "nodered/node-red:latest"
+    # this is the latest most fully featured nodered image for development. Has latest features
+    prod = "nodered/node-red:latest-minimal"
+    # minimal will be the tag of this production image with less features and less of attack security surface
+  }
+}
+
+
+
+
 variable "ext_port" {
 # the name is up to you
   #type = number
@@ -25,8 +53,6 @@ variable "ext_port" {
   # I need to use multiple containers.   This is because a static 1880 will conflict on the second container port binding to localhost
   # and only the first container will get created.
   # If count =1 we can use this varaible at 1880.
-  
-  
   
   
   # validation {
@@ -70,6 +96,12 @@ locals {
   container_count = length(var.ext_port)
   # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
 }
+
+
+
+
+
+
 
 
 

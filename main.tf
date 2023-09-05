@@ -86,7 +86,14 @@ resource "null_resource" "docker_volume" {
 # https://registry.terraform.io/providers/kreuzwerker/docker/2.15.0/docs/resources/image
 resource "docker_image" "nodered_image" {
   # name of the image itself. This is the docker hub name reference not an arbitrary name that we are assigning.
-  name = "nodered/node-red:latest"
+  ## name = "nodered/node-red:latest"
+  
+  # add new code for separate environments dev and prod. see varaibles.tf file. We have var.env and var.image
+  # https://developer.hashicorp.com/terraform/language/functions/lookup
+  # the first is the value and the second is the key into the apped variable var.image.  var.env=dev will key into image:latest
+  # and var.env=prod will key into image:latest-minimal
+  # NOTE: we do not need {} around var.image because that is already a map with the {} in the variable definition (see variables.tf)
+  name = "lookup(var.image, var.env)"
 }
 
 
