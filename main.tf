@@ -192,7 +192,12 @@ resource "docker_container" "nodered_container" {
     #external = var.ext_port[0]
     
     # Next add count.index to make this extensible for multiple containers. First container has index of 0, second has index of 1, and so on....
-    external = var.ext_port[count.index]
+    #external = var.ext_port[count.index]
+    
+    # In applying multiple environments (dev,prod) we need to incorporate the lookup function here as well (changes also made in variables.tf and terraform.tfvars)
+    external = lookup(var.ext_port, var.env)[count.index]
+    # this will essentally do a lookp on the port given the environment (for example 1880 in env=dev) and index that to the docker container instance
+    # so essentially 1880[0] for the first instance and 1881[1] for the second docker instance
   
     
     # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that

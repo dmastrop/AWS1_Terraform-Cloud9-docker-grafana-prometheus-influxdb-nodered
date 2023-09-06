@@ -38,8 +38,13 @@ variable "ext_port" {
 # the name is up to you
   #type = number
   
-  type = list
+  ## type = list
   # change type to list now that terraform.tfvars is specifying the ext_port as a [list], [1880] to start.
+  
+  type = map
+  # as we extend functionality, need to make the ext_port a map now so that we can have different external ports in different environments
+  # See the terraform.tfvars for the values (dev is 1980, ..... and prod is 1880,.....)
+
   
   # flag this variable as senitive to hide values from terraform terminal display.
   # this is a test. This will also need to be done in the outputs.tf because that also displays this variable.
@@ -59,14 +64,20 @@ variable "ext_port" {
   #   condition = var.ext_port <= 65535 && var.ext_port > 0
   #   error_message = "The external port range must be in the valid port range 0 - 65535."
   # }
+  
+  
 
-  validation {
-    condition = max(var.ext_port...) <= 65535 && min(var.ext_port...) > 0
-    error_message = "The external port range must be in the valid port range 0 - 65535."
-  }
-  # https://developer.hashicorp.com/terraform/language/expressions/function-calls#expanding-function-arguments
-  # https://developer.hashicorp.com/terraform/language/functions/max
-}
+
+## temporarily comment this out again for the map testing with multiple environments....
+
+#   validation {
+#     condition = max(var.ext_port...) <= 65535 && min(var.ext_port...) > 0
+#     error_message = "The external port range must be in the valid port range 0 - 65535."
+#   }
+#   # https://developer.hashicorp.com/terraform/language/expressions/function-calls#expanding-function-arguments
+#   # https://developer.hashicorp.com/terraform/language/functions/max
+
+ }
 
 
 
@@ -93,8 +104,14 @@ variable "ext_port" {
 # with locals we can align the number of external ports in terraform.tfvars to the count through this same "length" function call.
 ## https://developer.hashicorp.com/terraform/language/values/locals
 locals {
-  container_count = length(var.ext_port)
+  ## container_count = length(var.ext_port)
   # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
+  
+  container_count = length(lookup(var.ext_port, var.env))
+  # here we need to apply what we did for the resource docker_image in main.tf. Use the var.env as a key into the map var.ext_port
+  # The lookup will apply the actual environment and get the count in that environment. So we can have different container_counts 
+  # in different environments. For example if there are ports 1980, 1981, 1982 for env=dev and ports 1880, 1881 for env=prod
+  # there will be 3 containers deployed if this is dev env and there will be 2 containers deployed if this is a prod env.
 }
 
 
