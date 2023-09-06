@@ -70,13 +70,36 @@ variable "ext_port" {
 
 ## temporarily comment this out again for the map testing with multiple environments....
 
-#   validation {
-#     condition = max(var.ext_port...) <= 65535 && min(var.ext_port...) > 0
-#     error_message = "The external port range must be in the valid port range 0 - 65535."
-#   }
-#   # https://developer.hashicorp.com/terraform/language/expressions/function-calls#expanding-function-arguments
-#   # https://developer.hashicorp.com/terraform/language/functions/max
+  # validation {
+  #   condition = max(var.ext_port...) <= 65535 && min(var.ext_port...) > 0
+  #   error_message = "The external port range must be in the valid port range 0 - 65535."
+  # }
+  # # https://developer.hashicorp.com/terraform/language/expressions/function-calls#expanding-function-arguments
+  # # https://developer.hashicorp.com/terraform/language/functions/max
 
+
+  # need to modify the validation for ext_port to incorporate multiple environments setup. Can't just add lookup function to this part of the 
+  # code.  The best approach here is to create 2 different validations for each env since port sets are discrete
+  # we can reference the dev and prod ext_port via the key as var.ext_port["key"]
+  # The "dev" is below.   "dev" uses 1980, .... so set min at 1980 instead of zero
+  validation {
+    #condition = max(var.ext_port["dev"]...) <= 65535 && min(var.ext_port["dev"]...) > 0
+    condition = max(var.ext_port["dev"]...) <= 65535 && min(var.ext_port["dev"]...) >= 1980
+    error_message = "The external port range must be in the valid port range 0 - 65535."
+  }
+  # https://developer.hashicorp.com/terraform/language/expressions/function-calls#expanding-function-arguments
+  # https://developer.hashicorp.com/terraform/language/functions/max
+  
+  # do the same for the "prod" environment
+  # prod is using 1880, .... so set the min here as 1880 and max at less than 1980
+   validation {
+    #condition = max(var.ext_port["prod"]...) <= 65535 && min(var.ext_port["prod"]...) > 0
+    condition = max(var.ext_port["prod"]...) < 1980 && min(var.ext_port["prod"]...) >= 1880
+    error_message = "The external port range must be in the valid port range 0 - 65535."
+  }
+  
+  
+# end variable "ext_port"  
  }
 
 
