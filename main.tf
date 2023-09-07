@@ -7,7 +7,7 @@ terraform {
       #version = "2.15.0"
       # this is a test version and will be blocked by the .terraform.lock.hcl file.
       # my setup is currently at 
-      # version = 3.0.2
+      # version = "3.0.2"
       # to get the 2.15.0 to take must do a    terraform init -upgrade
       
       # to prevent an upgrade on second number do this:
@@ -16,7 +16,11 @@ terraform {
       # version  = "~> 2.12" will allow 2.x but not 3.x.  Rightmost number can increase as much as possible without next left number incrementing.
       
       # version = "~> 2.15.0" will lock it to 2.15.x 
-      version = "~> 2.15.0"
+      #version = "~> 2.15.0"
+      # commenting this out will bring it to the latest 3.0.2 version. This did not work. 
+      
+      # try explicit version
+      version = "3.0.2"
       
     }
   }
@@ -93,7 +97,10 @@ resource "docker_image" "nodered_image" {
   # the first is the value and the second is the key into the apped variable var.image.  var.env=dev will key into image:latest
   # and var.env=prod will key into image:latest-minimal
   # NOTE: we do not need {} around var.image because that is already a map with the {} in the variable definition (see variables.tf)
-  name = lookup(var.image, var.env)
+  ## name = lookup(var.image, var.env)
+  
+  # replacing var.env with terraform.workspace for environment accessment
+  name = lookup(var.image, terraform.workspace)
 }
 
 
@@ -153,9 +160,14 @@ resource "docker_container" "nodered_container" {
   # For each random_string count above, this will increment the count.index value.  Note need to add the count = 2 in this resource as well (see above).
   # the index will start at [0] and then [1], etc.....
   # https://developer.hashicorp.com/terraform/language/meta-arguments/count
-  name = join("-", ["nodered", random_string.random[count.index].result])
+  ## name = join("-", ["nodered", random_string.random[count.index].result])
   
-  image = docker_image.nodered_image.latest
+  # incorporate the terraform.workspace environment into the name. Simply add this to the join command above.
+  name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+  
+  
+  
+  ##image = docker_image.nodered_image.latest
   # this is referenced from the docker image above: docker_image.nodered_image.latest
   # "latest" can be referenced from other resources as a single image.  This seems to work only with docker 2.15.0
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image
@@ -165,7 +177,7 @@ resource "docker_container" "nodered_container" {
   # https://stackoverflow.com/questions/73451024/where-to-find-information-about-the-following-terraform-provider-attribute-depre
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image#read-only
   # image = docker_image.nodered_image.image_id
-  ##image = docker_image.nodered_image.image_id
+  image = docker_image.nodered_image.image_id
 
 
   # ports will need to be exposed on this container
@@ -195,10 +207,12 @@ resource "docker_container" "nodered_container" {
     #external = var.ext_port[count.index]
     
     # In applying multiple environments (dev,prod) we need to incorporate the lookup function here as well (changes also made in variables.tf and terraform.tfvars)
-    external = lookup(var.ext_port, var.env)[count.index]
+    ## external = lookup(var.ext_port, var.env)[count.index]
     # this will essentally do a lookp on the port given the environment (for example 1880 in env=dev) and index that to the docker container instance
     # so essentially 1880[0] for the first instance and 1881[1] for the second docker instance
-  
+    
+    #replacing var.env with terraform.workspace for external value
+    external = lookup(var.ext_port, terraform.workspace)[count.index]
     
     # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
     # both external ports are dynamically provisioned by docker if using a count > 1.

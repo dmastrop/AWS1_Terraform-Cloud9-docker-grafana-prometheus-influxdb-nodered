@@ -8,14 +8,16 @@
 ## https://developer.hashicorp.com/terraform/language/expressions/custom-conditions#input-variable-validation
 
 
-
-# this is the environment varaible, i.e. production (prod) vs. development (dev)
-variable "env" {
-  type = string
-  description = "The environment to deploy to"
-  default = "dev"
-  # if the env is not specified we definitely do not want to deploy to prod. Put default at dev.
-}
+# with the use of workspaces to access the environment we can comment this var.env completely out. We no longer need to rely on this
+# variable to run different environments. Instead the terraform.workspace reference can be used in the code to access the environments.
+# In workspace prod the terraform.workspace = prod and in workspace dv the terraform.workspace = dev.
+# # this is the environment varaible, i.e. production (prod) vs. development (dev)
+# variable "env" {
+#   type = string
+#   description = "The environment to deploy to"
+#   default = "dev"
+#   # if the env is not specified we definitely do not want to deploy to prod. Put default at dev.
+# }
 
 
 

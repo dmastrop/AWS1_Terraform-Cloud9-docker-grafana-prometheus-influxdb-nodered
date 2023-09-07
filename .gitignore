@@ -29,3 +29,8 @@ crash.log
 
 # terraform tfvars files. These have sensitive variable information.
 *.tfvars
+
+# noderedvol.  this is the bind mount for the nodered container instances. It is mounted to /data on the containers.
+noderedvol
+noderedvol/
+

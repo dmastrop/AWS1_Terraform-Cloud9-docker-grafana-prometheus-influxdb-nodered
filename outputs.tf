@@ -70,11 +70,23 @@ output "Container_names" {
 
   #value = join(":", [docker_container.nodered_container.ip_address, docker_container.nodered_container.ports[0].external])
   #value = join(":", [docker_container.nodered_container[0].ip_address, docker_container.nodered_container[0].ports[0].external])
-  value = [for i in docker_container.nodered_container[*]: join(":", [i.ip_address],i.ports[*]["external"])]
+  
+  
+  ##value = [for i in docker_container.nodered_container[*]: join(":", [i.ip_address],i.ports[*]["external"])]
   # [for i in docker_container.nodered_container[*]: i]    this will dump everything. But we can grep attributes out with i.ip_address for example
   # note that the i.ports[*] splat does not require brackets in the join because it returns a nested list with brackets
   # if we were to use i.ports[0] this would require brackets in the join because it returns an un-nested list
   # Thus alternate syntax: [for i in docker_container.nodered_container[*]: join(":", [i.ip_address], [i.ports[0]["external"]])]
+  
+  # the i.ip_address (above) has been deprecated. It was ok in docker provider version 2.15.0 but 3.0.2 does not like this.
+  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#network_data
+  # new syntax is below:
+  # value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address, i.ports[0].external])]
+  # value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
+  value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
+  
+  
+  
   
   description = "the IP address and external port of each nodered container"
   
