@@ -12,6 +12,7 @@
 # variable to run different environments. Instead the terraform.workspace reference can be used in the code to access the environments.
 # In workspace prod the terraform.workspace = prod and in workspace dv the terraform.workspace = dev.
 # # this is the environment varaible, i.e. production (prod) vs. development (dev)
+
 # variable "env" {
 #   type = string
 #   description = "The environment to deploy to"
@@ -132,11 +133,14 @@ locals {
   ## container_count = length(var.ext_port)
   # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
   
-  container_count = length(lookup(var.ext_port, var.env))
+  ## container_count = length(lookup(var.ext_port, var.env))
   # here we need to apply what we did for the resource docker_image in main.tf. Use the var.env as a key into the map var.ext_port
   # The lookup will apply the actual environment and get the count in that environment. So we can have different container_counts 
   # in different environments. For example if there are ports 1980, 1981, 1982 for env=dev and ports 1880, 1881 for env=prod
   # there will be 3 containers deployed if this is dev env and there will be 2 containers deployed if this is a prod env.
+  
+  # remove var.env and replace with terraform.workspace for environment setting
+  container_count = length(lookup(var.ext_port, terraform.workspace))
 }
 
 
