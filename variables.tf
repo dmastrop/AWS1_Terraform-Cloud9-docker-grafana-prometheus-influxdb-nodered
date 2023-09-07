@@ -47,6 +47,8 @@ variable "ext_port" {
   type = map
   # as we extend functionality, need to make the ext_port a map now so that we can have different external ports in different environments
   # See the terraform.tfvars for the values (dev is 1980, ..... and prod is 1880,.....)
+  # ***********we MOVED the map values to terraform.tfvars for security *************
+  
 
   
   # flag this variable as senitive to hide values from terraform terminal display.
@@ -140,7 +142,11 @@ locals {
   # there will be 3 containers deployed if this is dev env and there will be 2 containers deployed if this is a prod env.
   
   # remove var.env and replace with terraform.workspace for environment setting
-  container_count = length(lookup(var.ext_port, terraform.workspace))
+  ## container_count = length(lookup(var.ext_port, terraform.workspace))
+  
+  # further optimization. We can replace the lookup with direct reference var.ext_port[terraform.workspace] similar to the valudation code for the 
+  # var.ext_port (see above), i.e. var.ext_port["dev"] and var.ext_port["prod"]
+  container_count = length(var.ext_port[terraform.workspace])
 }
 
 

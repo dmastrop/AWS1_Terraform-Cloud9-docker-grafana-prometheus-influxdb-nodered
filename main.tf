@@ -100,8 +100,19 @@ resource "docker_image" "nodered_image" {
   ## name = lookup(var.image, var.env)
   
   # replacing var.env with terraform.workspace for environment accessment
-  name = lookup(var.image, terraform.workspace)
+  ## name = lookup(var.image, terraform.workspace)
+  
+  # optimize this (above) by getting rid of the lookup function and referencing the var.image directly through terraform.workspace
+  # This optimization done throughout main.tf and variables.tf including for the locals in the variables.tf for the container_count
+  # The syntax below will rerference the proper map entry in var.image based on the workspace (environment)
+  name = var.image[terraform.workspace]
 }
+
+
+
+
+
+
 
 
 
@@ -212,7 +223,15 @@ resource "docker_container" "nodered_container" {
     # so essentially 1880[0] for the first instance and 1881[1] for the second docker instance
     
     #replacing var.env with terraform.workspace for external value
-    external = lookup(var.ext_port, terraform.workspace)[count.index]
+    ## external = lookup(var.ext_port, terraform.workspace)[count.index]
+    
+    # the above can be simplified further. We can reference each var.ext_port by doing var.ext_port["dev"] and var.ext_port["prod"]
+    # This approach was used in varibles.tf for var.ext_port validation code (see variables.tf file)file
+    # If we use this approach we no longer need the lookup function
+    external = var.ext_port[terraform.workspace][count.index]
+    # for for each port there will be a count.index value assigned which is used to map to the container instance
+    
+    
     
     # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
     # both external ports are dynamically provisioned by docker if using a count > 1.
