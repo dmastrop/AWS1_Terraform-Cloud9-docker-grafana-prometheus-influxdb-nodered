@@ -85,7 +85,9 @@ output "Container_names" {
   # value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
   value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
   
-  
+  ## NOTE: this is from the quiz. This is an alternate syntax without the join command
+  ## this uses interpolation.
+  ## value = [for x in docker_container.grafana_container :  "${x.name} - ${x.network_data[0].ip_address}:${x.ports[0].external}"]
   
   
   description = "the IP address and external port of each nodered container"

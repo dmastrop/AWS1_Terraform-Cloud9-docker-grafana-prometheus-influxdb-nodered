@@ -1,9 +1,34 @@
-## this is the modular main.tf file.  For the original nonmodular main.tf see the old_files folder above
-## the nonmodular terraform implementation is in branch development_through_46_nonmodular branch.
-## this is the master branch.
+terraform {
+  required_providers {
+    docker = {
+      source = "kreuzwerker/docker"
+      # this is the api for docker that we will use.
+      #version = "2.12.0"
+      #version = "2.15.0"
+      # this is a test version and will be blocked by the .terraform.lock.hcl file.
+      # my setup is currently at 
+      # version = "3.0.2"
+      # to get the 2.15.0 to take must do a    terraform init -upgrade
+      
+      # to prevent an upgrade on second number do this:
+      #  version = "~> 2.12.0"  this will allow any 2.12.x but not 2.15
+      
+      # version  = "~> 2.12" will allow 2.x but not 3.x.  Rightmost number can increase as much as possible without next left number incrementing.
+      
+      # version = "~> 2.15.0" will lock it to 2.15.x 
+      #version = "~> 2.15.0"
+      # commenting this out will bring it to the latest 3.0.2 version. This did not work. 
+      
+      # try explicit version
+      version = "3.0.2"
+      
+    }
+  }
+}
 
+provider "docker" {}
+# this instantiates the docker provider itself
 
-## removed the required providers block and the provider block and put into providers.tf file (modular)
 
 resource "null_resource" "docker_volume" {
 # https://developer.hashicorp.com/terraform/language/v1.1.x/resources/provisioners/local-exec
@@ -62,33 +87,29 @@ resource "null_resource" "docker_volume" {
 
 
 
-# # https://registry.terraform.io/providers/kreuzwerker/docker/2.15.0/docs/resources/image
-# resource "docker_image" "nodered_image" {
-#   # name of the image itself. This is the docker hub name reference not an arbitrary name that we are assigning.
-#   ## name = "nodered/node-red:latest"
+# https://registry.terraform.io/providers/kreuzwerker/docker/2.15.0/docs/resources/image
+resource "docker_image" "nodered_image" {
+  # name of the image itself. This is the docker hub name reference not an arbitrary name that we are assigning.
+  ## name = "nodered/node-red:latest"
   
-#   # add new code for separate environments dev and prod. see varaibles.tf file. We have var.env and var.image
-#   # https://developer.hashicorp.com/terraform/language/functions/lookup
-#   # the first is the value and the second is the key into the apped variable var.image.  var.env=dev will key into image:latest
-#   # and var.env=prod will key into image:latest-minimal
-#   # NOTE: we do not need {} around var.image because that is already a map with the {} in the variable definition (see variables.tf)
-#   ## name = lookup(var.image, var.env)
+  # add new code for separate environments dev and prod. see varaibles.tf file. We have var.env and var.image
+  # https://developer.hashicorp.com/terraform/language/functions/lookup
+  # the first is the value and the second is the key into the apped variable var.image.  var.env=dev will key into image:latest
+  # and var.env=prod will key into image:latest-minimal
+  # NOTE: we do not need {} around var.image because that is already a map with the {} in the variable definition (see variables.tf)
+  ## name = lookup(var.image, var.env)
   
-#   # replacing var.env with terraform.workspace for environment accessment
-#   ## name = lookup(var.image, terraform.workspace)
+  # replacing var.env with terraform.workspace for environment accessment
+  ## name = lookup(var.image, terraform.workspace)
   
-#   # optimize this (above) by getting rid of the lookup function and referencing the var.image directly through terraform.workspace
-#   # This optimization done throughout main.tf and variables.tf including for the locals in the variables.tf for the container_count
-#   # The syntax below will rerference the proper map entry in var.image based on the workspace (environment)
-#   name = var.image[terraform.workspace]
-# }
-
-
-# comment out the above and reference the image through the image main.tf module
-module "image"  {
-  source = "./image"
+  # optimize this (above) by getting rid of the lookup function and referencing the var.image directly through terraform.workspace
+  # This optimization done throughout main.tf and variables.tf including for the locals in the variables.tf for the container_count
+  # The syntax below will rerference the proper map entry in var.image based on the workspace (environment)
+  name = var.image[terraform.workspace]
 }
-# thus root main.tf will get the image from image main.tf
+
+
+
 
 
 
@@ -167,10 +188,7 @@ resource "docker_container" "nodered_container" {
   # https://stackoverflow.com/questions/73451024/where-to-find-information-about-the-following-terraform-provider-attribute-depre
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image#read-only
   # image = docker_image.nodered_image.image_id
-  ##image = docker_image.nodered_image.image_id
-  
-  # we can now reference the image through the image module outputs.tf "image_out"
-  image = module.image.image_out
+  image = docker_image.nodered_image.image_id
 
 
   # ports will need to be exposed on this container
