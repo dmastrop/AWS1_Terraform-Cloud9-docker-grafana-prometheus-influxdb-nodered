@@ -87,6 +87,13 @@ resource "null_resource" "docker_volume" {
 # comment out the above and reference the image through the image main.tf module
 module "image"  {
   source = "./image"
+  # everything below source are variables that we are passing from root main and into
+  # image module.
+  # "image_in" is what we choose to call it.
+  image_in = var.image[terraform.workspace]
+  #this is the same name we used in the original resource "docker_image" code above
+  # that is now commented out.  terraform.workspace keys into the map var.image to get
+  # the image for dev and prod environments.
 }
 # thus root main.tf will get the image from image main.tf
 
