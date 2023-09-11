@@ -36,7 +36,7 @@
 output "Container_names" {
   #value = docker_container.nodered_container.name
   value = docker_container.nodered_container[*].name
-  description = "this is the names of the containers"
+  description = "these are the names of the containers"
 }
 
 
