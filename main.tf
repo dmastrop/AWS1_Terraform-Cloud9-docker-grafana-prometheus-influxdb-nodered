@@ -139,6 +139,10 @@ resource "random_string" "random" {
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
 resource "docker_container" "nodered_container" {
+  # use the depends_on to create the dependency of the container on the volume
+  depends_on = [null_resource.docker_volume]
+
+
   #count = 2
   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
  # count = var.container_count
@@ -166,11 +170,11 @@ resource "docker_container" "nodered_container" {
   
   # incorporate the terraform.workspace environment into the name. Simply add this to the join command above.
   
-  #name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+  name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
   # add the null_resource.docker_volume.id to the name to insure that the volume is created before
   # the container is created
-  name = join("-", ["nodered", terraform.workspace, null_resource.docker_volume.id, random_string.random[count.index].result])
+  #name = join("-", ["nodered", terraform.workspace, null_resource.docker_volume.id, random_string.random[count.index].result])
   
   ##image = docker_image.nodered_image.latest
   # this is referenced from the docker image above: docker_image.nodered_image.latest
