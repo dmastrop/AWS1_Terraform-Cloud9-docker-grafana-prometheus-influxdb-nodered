@@ -8,7 +8,12 @@
 resource "null_resource" "docker_volume" {
 # https://developer.hashicorp.com/terraform/language/v1.1.x/resources/provisioners/local-exec
   provisioner "local-exec" {
-    command = "mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
+    
+    # add a sleep of 60 to introduce a dependency issue between the docker container creation and the
+    # volume being ready for that docker instance creation.
+    command = "sleep 60 && mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
+    
+    #command = "mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
     # note the nodered documentation: the volume must be mounted to docker container /data directory and the following::
      # https://nodered.org/docs/getting-started/docker
      # Using a Host Directory for Persistence (Bind Mount)
@@ -160,9 +165,12 @@ resource "docker_container" "nodered_container" {
   ## name = join("-", ["nodered", random_string.random[count.index].result])
   
   # incorporate the terraform.workspace environment into the name. Simply add this to the join command above.
-  name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
+  #name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
+  # add the null_resource.docker_volume.id to the name to insure that the volume is created before
+  # the container is created
+  name = join("-", ["nodered", terraform.workspace, null_resource.docker_volume.id, random_string.random[count.index].result])
   
   ##image = docker_image.nodered_image.latest
   # this is referenced from the docker image above: docker_image.nodered_image.latest
