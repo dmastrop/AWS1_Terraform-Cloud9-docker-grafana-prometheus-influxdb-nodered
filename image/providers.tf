@@ -27,5 +27,7 @@ terraform {
   }
 }
 
-provider "docker" {}
+#provider "docker" {}
 # this instantiates the docker provider itself
+# we can comment this out.  The root/providers.tf provider "docker"
+# is inherted here in this image/providers.tf
