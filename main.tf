@@ -149,7 +149,6 @@ resource "random_string" "random" {
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
 resource "docker_container" "nodered_container" {
 
-  depends_on = [null_resource.docker_volume]
   #count = 2
   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
  # count = var.container_count
