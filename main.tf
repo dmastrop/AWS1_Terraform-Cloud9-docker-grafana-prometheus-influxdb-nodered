@@ -135,130 +135,168 @@ resource "random_string" "random" {
 
 
 
-# deployment of the container based upon the image  "nodered_image" above
-# "docker_container" must be used. That cannot be changed.
-# https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
-resource "docker_container" "nodered_container" {
-  # use the depends_on to create the dependency of the container on the volume
+# for module implementation comment out this entire block and
+# move this to container/main.tf file.
+# Convert the code below to module "container" (see below)
+
+
+# # deployment of the container based upon the image  "nodered_image" above
+# # "docker_container" must be used. That cannot be changed.
+# # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
+# resource "docker_container" "nodered_container" {
+#   # use the depends_on to create the dependency of the container on the volume
+#   depends_on = [null_resource.docker_volume]
+
+
+#   #count = 2
+#   # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
+# # count = var.container_count
+  
+#   # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
+#   # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
+#   # same needs to be done in the random_string resource above.
+#   count = local.container_count
+
+#   #name = "nodered"
+#   # this is a logical value for referencing only.
+#   # randomize the name:
+#   #name = join("-", ["nodered", random_string.random.result])
+#   # for multiple count: use random_string.random.result[count.index].result
+#   # For each random_string count above, this will increment the count.index value.  Note need to add the count = 2 in this resource as well (see above).
+#   # the index will start at [0] and then [1], etc.....
+#   # https://developer.hashicorp.com/terraform/language/meta-arguments/count
+#   ## name = join("-", ["nodered", random_string.random[count.index].result])
+  
+#   # incorporate the terraform.workspace environment into the name. Simply add this to the join command above.
+  
+#   name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+  
+#   # add the null_resource.docker_volume.id to the name to ensure that the volume is created before
+#   # the container is created
+#   #name = join("-", ["nodered", terraform.workspace, null_resource.docker_volume.id, random_string.random[count.index].result])
+  
+#   ##image = docker_image.nodered_image.latest
+#   # this is referenced from the docker image above: docker_image.nodered_image.latest
+#   # "latest" can be referenced from other resources as a single image.  This seems to work only with docker 2.15.0
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image
+  
+#   # for docker 3.0.2 use image_id. Minimum version to support this syntax is 2.21.0 so use version = "~> 2.21.0" in the 
+#   # docker provider block if want to use this syntax.   I am on 2.15.0 and this new syntax will not work (error)
+#   # https://stackoverflow.com/questions/73451024/where-to-find-information-about-the-following-terraform-provider-attribute-depre
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image#read-only
+#   # image = docker_image.nodered_image.image_id
+#   ##image = docker_image.nodered_image.image_id
+  
+#   # we can now reference the image through the image module outputs.tf "image_out"
+#   image = module.image.image_out
+
+
+#   # ports will need to be exposed on this container
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
+#   # internal (Number) Port within the container.; external (Number) Port exposed out of the container. If not given a free random port >= 32768 will be used.
+#   # ip (String) IP address/mask that can access this port. Defaults to 0.0.0.0.; protocol (String) Protocol that can be used over this port. Defaults to tcp.
+#   ports {
+#     # ports is a nested schema
+    
+    
+#     #internal = 1880
+#     # terraform refers to this as a number and not an integer.  1880 is the nodered listening port.  See documentation
+#     internal = var.internal_port
+    
+    
+#     #external = 1880
+    
+#     # if we comment out the external port, docker will automatically choose external port for you
+#     # for varaibles testing uncomment this out.  var.ext_port refers to the varaible specified above.
+#     #external = var.ext_port
+    
+#     # start adding mutliple ports. First define ext_port as a list
+#     #external = var.ext_port[0]
+    
+#     # Next add count.index to make this extensible for multiple containers. First container has index of 0, second has index of 1, and so on....
+#     #external = var.ext_port[count.index]
+    
+#     # In applying multiple environments (dev,prod) we need to incorporate the lookup function here as well (changes also made in variables.tf and terraform.tfvars)
+#     ## external = lookup(var.ext_port, var.env)[count.index]
+#     # this will essentally do a lookp on the port given the environment (for example 1880 in env=dev) and index that to the docker container instance
+#     # so essentially 1880[0] for the first instance and 1881[1] for the second docker instance
+    
+#     #replacing var.env with terraform.workspace for external value
+#     ## external = lookup(var.ext_port, terraform.workspace)[count.index]
+    
+#     # the above can be simplified further. We can reference each var.ext_port by doing var.ext_port["dev"] and var.ext_port["prod"]
+#     # This approach was used in varibles.tf for var.ext_port validation code (see variables.tf file)file
+#     # If we use this approach we no longer need the lookup function
+#     external = var.ext_port[terraform.workspace][count.index]
+#     # for for each port there will be a count.index value assigned which is used to map to the container instance
+    
+    
+    
+#     # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
+#     # both external ports are dynamically provisioned by docker if using a count > 1.
+#     # For now we are using count =1 and this setting with var.ext_port is fine....
+#   }
+  
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
+#   volumes {
+#     container_path = "/data"
+#     # this is per the nodered documentation. See above notes in the null_resource
+#     ## host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
+#     # this is the fully qualified path to the volume in my workspace
+    
+#     # we need to make this host_path dynamic in case the directory of this noderedvol changes.
+#     # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
+#     # https://developer.hashicorp.com/terraform/language/expressions/references
+#     # https://developer.hashicorp.com/terraform/language/expressions/strings
+#     # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+#     host_path = "${path.cwd}/noderedvol"
+#   }
+  
+# }  
+
+
+## modularize the resource docker container above. 
+## The resource itself is moved to the container/main.tf
+## See below:
+module "container" {
+  # indicate where the container module is located (folder)
+  source = "./container"
+  
+  # as of 0.13 terraform the depends_on works in modules as well.
   depends_on = [null_resource.docker_volume]
-
-
-  #count = 2
-  # must add the count here as well. The count.index will be incremented with index [0] and [1] for the name defined below.
- # count = var.container_count
   
-  # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
-  # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
-  # same needs to be done in the random_string resource above.
   count = local.container_count
+  # keep count here. We want to count container module deployments and
+  # not count in the container module itself.
+  # the local defintion is in variables.tf
   
+  # rename "name" as "name_in" and this will be passed into the container 
+  name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
+  # rename "image" as "image_in" and this will be passed into the container/main.tf module
+  image_in = module.image.image_out
   
+  # for ports get rid of the nested ports{} here and rename the ports as 
+  # int_port_in and ext_port_in.  These ports are exportable to the container/main.tf
+  # internal = var.internal_port
+  # external = var.ext_port[terraform.workspace][count.index]
+  int_port_in = var.internal_port
+  ext_port_in = var.ext_port[terraform.workspace][count.index]
+  # this ext_port is still a map into variables.tf and terraform
   
-  
-  
-
-  #name = "nodered"
-  # this is a logical value for referencing only.
-  # randomize the name:
-  #name = join("-", ["nodered", random_string.random.result])
-  # for multiple count: use random_string.random.result[count.index].result
-  # For each random_string count above, this will increment the count.index value.  Note need to add the count = 2 in this resource as well (see above).
-  # the index will start at [0] and then [1], etc.....
-  # https://developer.hashicorp.com/terraform/language/meta-arguments/count
-  ## name = join("-", ["nodered", random_string.random[count.index].result])
-  
-  # incorporate the terraform.workspace environment into the name. Simply add this to the join command above.
-  
-  name = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
-  
-  # add the null_resource.docker_volume.id to the name to ensure that the volume is created before
-  # the container is created
-  #name = join("-", ["nodered", terraform.workspace, null_resource.docker_volume.id, random_string.random[count.index].result])
-  
-  ##image = docker_image.nodered_image.latest
-  # this is referenced from the docker image above: docker_image.nodered_image.latest
-  # "latest" can be referenced from other resources as a single image.  This seems to work only with docker 2.15.0
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image
-  
-  # for docker 3.0.2 use image_id. Minimum version to support this syntax is 2.21.0 so use version = "~> 2.21.0" in the 
-  # docker provider block if want to use this syntax.   I am on 2.15.0 and this new syntax will not work (error)
-  # https://stackoverflow.com/questions/73451024/where-to-find-information-about-the-following-terraform-provider-attribute-depre
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/image#read-only
-  # image = docker_image.nodered_image.image_id
-  ##image = docker_image.nodered_image.image_id
-  
-  # we can now reference the image through the image module outputs.tf "image_out"
-  image = module.image.image_out
-
-
-  # ports will need to be exposed on this container
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
-  # internal (Number) Port within the container.; external (Number) Port exposed out of the container. If not given a free random port >= 32768 will be used.
-  # ip (String) IP address/mask that can access this port. Defaults to 0.0.0.0.; protocol (String) Protocol that can be used over this port. Defaults to tcp.
-  ports {
-    # ports is a nested schema
-    
-    
-    #internal = 1880
-    # terraform refers to this as a number and not an integer.  1880 is the nodered listening port.  See documentation
-    internal = var.internal_port
-    
-    
-    #external = 1880
-    
-    # if we comment out the external port, docker will automatically choose external port for you
-    # for varaibles testing uncomment this out.  var.ext_port refers to the varaible specified above.
-    #external = var.ext_port
-    
-    # start adding mutliple ports. First define ext_port as a list
-    #external = var.ext_port[0]
-    
-    # Next add count.index to make this extensible for multiple containers. First container has index of 0, second has index of 1, and so on....
-    #external = var.ext_port[count.index]
-    
-    # In applying multiple environments (dev,prod) we need to incorporate the lookup function here as well (changes also made in variables.tf and terraform.tfvars)
-    ## external = lookup(var.ext_port, var.env)[count.index]
-    # this will essentally do a lookp on the port given the environment (for example 1880 in env=dev) and index that to the docker container instance
-    # so essentially 1880[0] for the first instance and 1881[1] for the second docker instance
-    
-    #replacing var.env with terraform.workspace for external value
-    ## external = lookup(var.ext_port, terraform.workspace)[count.index]
-    
-    # the above can be simplified further. We can reference each var.ext_port by doing var.ext_port["dev"] and var.ext_port["prod"]
-    # This approach was used in varibles.tf for var.ext_port validation code (see variables.tf file)file
-    # If we use this approach we no longer need the lookup function
-    external = var.ext_port[terraform.workspace][count.index]
-    # for for each port there will be a count.index value assigned which is used to map to the container instance
-    
-    
-    
-    # NOTE:: with the var.ext_port provisioned at 1880 there is a problem with starting the second container. Comment this out so that
-    # both external ports are dynamically provisioned by docker if using a count > 1.
-    # For now we are using count =1 and this setting with var.ext_port is fine....
-  }
   
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
-  volumes {
-    container_path = "/data"
-    # this is per the nodered documentation. See above notes in the null_resource
-    ## host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
-    # this is the fully qualified path to the volume in my workspace
+  container_path_in = "/data"
     
-    # we need to make this host_path dynamic in case the directory of this noderedvol changes.
-    # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
-    # https://developer.hashicorp.com/terraform/language/expressions/references
-    # https://developer.hashicorp.com/terraform/language/expressions/strings
-    # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
-    host_path = "${path.cwd}/noderedvol"
-  }
+  # https://developer.hashicorp.com/terraform/language/expressions/references
+  # https://developer.hashicorp.com/terraform/language/expressions/strings
+  # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+  host_path_in = "${path.cwd}/noderedvol"
   
-}  
-
-
-
+}
 
 
 
