@@ -5,26 +5,39 @@
 
 ## removed the required providers block and the provider block and put into providers.tf file (modular)
 
-resource "null_resource" "docker_volume" {
-# https://developer.hashicorp.com/terraform/language/v1.1.x/resources/provisioners/local-exec
-  provisioner "local-exec" {
+
+
+
+
+## remove this "null_resource" for the local-exec provisioner to create the docker volume
+## this is not the best way to do this.
+
+# resource "null_resource" "docker_volume" {
+# # https://developer.hashicorp.com/terraform/language/v1.1.x/resources/provisioners/local-exec
+#   provisioner "local-exec" {
     
-    # add a sleep of 60 to introduce a dependency issue between the docker container creation and the
-    # volume being ready for that docker instance creation.
-    #command = "sleep 60 && mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
+#     # add a sleep of 60 to introduce a dependency issue between the docker container creation and the
+#     # volume being ready for that docker instance creation.
+#     #command = "sleep 60 && mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
     
-    command = "mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
-    # note the nodered documentation: the volume must be mounted to docker container /data directory and the following::
-     # https://nodered.org/docs/getting-started/docker
-     # Using a Host Directory for Persistence (Bind Mount)
-     # Note: "Users migrating from version 0.20 to 1.0 will need to ensure that any existing /data directory has the correct ownership. 
-     # As of 1.0 this needs to be 1000:1000. 
-     # This can be forced by the command sudo chown -R 1000:1000 path/to/your/node-red/data
+#     command = "mkdir noderedvol/ || true && sudo chown -R 1000:1000 noderedvol/"
+#     # note the nodered documentation: the volume must be mounted to docker container /data directory and the following::
+#     # https://nodered.org/docs/getting-started/docker
+#     # Using a Host Directory for Persistence (Bind Mount)
+#     # Note: "Users migrating from version 0.20 to 1.0 will need to ensure that any existing /data directory has the correct ownership. 
+#     # As of 1.0 this needs to be 1000:1000. 
+#     # This can be forced by the command sudo chown -R 1000:1000 path/to/your/node-red/data
      
-     # the "|| true"logic makes this more idempotent, so that RC=0 is returned and even though it still fails to create the directory again, 
-     # it will not error out and fail the terraform apply.
-  }
-}
+#     # the "|| true"logic makes this more idempotent, so that RC=0 is returned and even though it still fails to create the directory again, 
+#     # it will not error out and fail the terraform apply.
+#   }
+# }
+
+
+
+
+
+
 
 
 # ### moved all of the variables code from main.tf to variables.tf (single hash # comment is the final code for this here)
@@ -264,15 +277,21 @@ module "container" {
   # indicate where the container module is located (folder)
   source = "./container"
   
+  
+  
   # as of 0.13 terraform the depends_on works in modules as well.
-  depends_on = [null_resource.docker_volume]
+  # depends_on = [null_resource.docker_volume]
+  ## remove the above now that we are getting rid of the "null_resource"
+  ## local-exec provisioner for the docker volume (see above; it has been commented out)
+  
+  
   
   count = local.container_count
   # keep count here. We want to count container module deployments and
   # not count in the container module itself.
   # the local defintion is in variables.tf
   
-  # rename "name" as "name_in" and this will be passed into the container 
+  # rename "name" as "name_in" and this will be passed into the container/main.tf module
   name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
   # rename "image" as "image_in" and this will be passed into the container/main.tf module
