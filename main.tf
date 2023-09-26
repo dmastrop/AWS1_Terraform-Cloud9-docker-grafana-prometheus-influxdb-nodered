@@ -197,7 +197,7 @@ locals {
 
 ##  STAGE 3: Create a single "image" module and use the locals defined above
 ## with for_each to key into the image values of the images
-module "image " {
+module "image" {
   source = "./image"
   for_each = local.deployment
   # this gives us access to the mapping in the locals above through the each keyword
