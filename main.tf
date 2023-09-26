@@ -361,6 +361,16 @@ resource "random_string" "random" {
 # }  
 
 
+
+
+
+
+
+
+
+
+### STAGE 1 module "container"
+
 ## modularize the resource docker container above. 
 ## The resource itself is moved to the container/main.tf
 ## See below:
