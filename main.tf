@@ -84,19 +84,33 @@
 
 
 
-# NEW CODE for for_each implementation
+# NEW CODE for for_each implementation of image module (STAGE 3 below)
 # https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each
 # https://developer.hashicorp.com/terraform/language/meta-arguments/for_each
+# keys are nodered and influxdb and valuses are the actual image.
 
 locals {
   deployment = {
     nodered = {
       image = var.image["nodered"][terraform.workspace]
+      
+      int = 1880
+      ext = var.ext_port["nodered"][terraform.workspace]
+      # this keys into the terraform.tfvars
+      
+      container_path  = "/data"
     }
     
-      influxdb = {
-        image = var.image["influxdb"][terraform.workspace]
-      }
+    influxdb = {
+      image = var.image["influxdb"][terraform.workspace]
+      
+      int = 8086
+      ext = var.ext_port["influxdb"][terraform.workspace]
+      # this keys into the terraform.tfvars
+      
+      container_path  = "/var/lib/influxdb"
+      # this is from the influxdb registry docs on docker
+    }
   }
 }
 
@@ -197,6 +211,10 @@ locals {
 
 ##  STAGE 3: Create a single "image" module and use the locals defined above
 ## with for_each to key into the image values of the images
+## https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each
+## https://developer.hashicorp.com/terraform/language/meta-arguments/for_each
+
+
 module "image" {
   source = "./image"
   for_each = local.deployment
@@ -437,6 +455,96 @@ module "container" {
   # this is also removed in container/variables.tf
   
 }
+
+
+
+## STAGE 2: Incorporation of the for_each logic into the container module resource
+
+## modularize the resource docker container above. 
+## The resource itself is moved to the container/main.tf
+## See below:
+module "container" {
+  # indicate where the container module is located (folder)
+  source = "./container"
+  
+  
+  # Add the for_each logic to this STAGE 2 module "container"container
+  for_each = local.deployment
+  
+  # as of 0.13 terraform the depends_on works in modules as well.
+  # depends_on = [null_resource.docker_volume]
+  ## remove the above now that we are getting rid of the "null_resource"
+  ## local-exec provisioner for the docker volume (see above; it has been commented out)
+  
+  
+  # In STAGE 2 must remove count for now. The for_each above will track the multiple
+  # instances. We can use count later on for a different purpose.
+  
+  #count = local.container_count
+  
+  # keep count here. We want to count container module deployments and
+  # not count in the container module itself.
+  # the local defintion is in variables.tf
+  
+  
+  
+  
+  # rename "name" as "name_in" and this will be passed into the container/main.tf module
+  #name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+  # For STAGE 2:
+  name_in = join("-", [each.key, terraform.workspace, random_string.random[count.index].result])
+  
+  
+  
+  # rename "image" as "image_in" and this will be passed into the container/main.tf module
+  ##image_in = module.image.image_out
+  ## edit the above with the new image module name "nodered_image".  See above
+ # image_in = module.nodered_image.image_out
+ 
+  # the above needs to change with the generic module "image" now (see above).
+  #image_in = module.image["nodered"].image_out
+  # For now key into this directly with the ["nodered"]
+  # For STAGE 2:
+  image_in = module.image[each.key].image_out
+  
+  
+
+  # for ports get rid of the nested ports{} here and rename the ports as 
+  # int_port_in and ext_port_in.  These ports are exportable to the container/main.tf
+  # internal = var.internal_port
+  # external = var.ext_port[terraform.workspace][count.index]
+ 
+  #int_port_in = var.internal_port
+  #ext_port_in = var.ext_port[terraform.workspace][count.index]
+  # this ext_port is still a map into variables.tf and terraform
+  
+  # For STAGE 2:
+  # key into the local values above
+  int_port_in = each.value.int
+  ext_port_in = each.value.ext
+  
+  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
+  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
+  #container_path_in = "/data"
+  
+  # For STAGE 2:
+  container_path_in = each.value.container_path
+    
+    
+    
+  # https://developer.hashicorp.com/terraform/language/expressions/references
+  # https://developer.hashicorp.com/terraform/language/expressions/strings
+  # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+  
+  # host_path_in = "${path.cwd}/noderedvol"
+  # Get rid of the host_path_in as part of the null_resource cleanup and conversion to using
+  # the docker volume resource in the container/main.tf
+  # this is also removed in container/variables.tf
+  
+}
+
+
+
 
 
 
