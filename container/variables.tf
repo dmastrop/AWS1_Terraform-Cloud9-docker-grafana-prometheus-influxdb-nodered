@@ -21,8 +21,11 @@ variable "container_path_in" {
     
 }
 
-variable "host_path_in" {
+# variable "host_path_in" {
     
-}
+# }
+#   # Get rid of the host_path_in as part of the null_resource cleanup and conversion to using
+#   # the docker volume resource in the container/main.tf
+    # This is also removed in the root/main.tf
 
 

@@ -80,6 +80,37 @@
 
 
 
+
+
+
+
+# NEW CODE for for_each implementation
+# https://developer.hashicorp.com/terraform/tutorials/configuration-language/for-each
+# https://developer.hashicorp.com/terraform/language/meta-arguments/for_each
+
+locals {
+  deployment = {
+    nodered = {
+      image = var.image["nodered"][terraform.workspace]
+    }
+    
+      influxdb = {
+        image = var.image["influxdb"][terraform.workspace]
+      }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 # # https://registry.terraform.io/providers/kreuzwerker/docker/2.15.0/docs/resources/image
 # resource "docker_image" "nodered_image" {
 #   # name of the image itself. This is the docker hub name reference not an arbitrary name that we are assigning.
@@ -102,18 +133,78 @@
 # }
 
 
-# comment out the above and reference the image through the image main.tf module
-module "image"  {
+
+
+
+## ORIGINAL module "image" commmented out and broken up into
+## "nodered_image" and influxdb_image"
+
+# # comment out the above and reference the image through the image main.tf module
+# module "image"  {
+#   source = "./image"
+#   # everything below source are variables that we are passing from root main and into
+#   # image module.
+#   # "image_in" is what we choose to call it.
+#   image_in = var.image[terraform.workspace]
+#   #this is the same name we used in the original resource "docker_image" code above
+#   # that is now commented out.  terraform.workspace keys into the map var.image to get
+#   # the image for dev and prod environments.
+# }
+# # thus root main.tf will get the image from image main.tf
+
+
+
+# ## STAGE 2: OBJECTIVE below is to create different images using the same image module
+# module "nodered_image"  {
+#   source = "./image"
+#   # everything below source are variables that we are passing from root main and into
+#   # image module.
+#   # "image_in" is what we choose to call it.
+  
+#   #image_in = var.image[terraform.workspace]
+#   #this is the same name we used in the original resource "docker_image" code above
+#   # that is now commented out.  terraform.workspace keys into the map var.image to get
+#   # the image for dev and prod environments.
+  
+#   # support for the 2 version mapping in the root/variables.tf
+#   # note that there is now a double key now.
+#   image_in = var.image["nodered"][terraform.workspace]
+# }
+# # thus root main.tf will get the image from image main.tf
+
+
+# module "influxdb_image"  {
+#   source = "./image"
+#   # everything below source are variables that we are passing from root main and into
+#   # image module.
+#   # "image_in" is what we choose to call it.
+  
+#   #image_in = var.image[terraform.workspace]
+#   #this is the same name we used in the original resource "docker_image" code above
+#   # that is now commented out.  terraform.workspace keys into the map var.image to get
+#   # the image for dev and prod environments.
+  
+#   # support for the 2 version mapping in the root/variables.tf
+#   # note that there is now a double key now.
+#   image_in = var.image["influxdb"][terraform.workspace]
+# }
+# # thus root main.tf will get the image from image main.tf
+
+
+
+
+
+
+##  STAGE 3: Create a single "image" module and use the locals defined above
+## with for_each to key into the image values of the images
+module "image " {
   source = "./image"
-  # everything below source are variables that we are passing from root main and into
-  # image module.
-  # "image_in" is what we choose to call it.
-  image_in = var.image[terraform.workspace]
-  #this is the same name we used in the original resource "docker_image" code above
-  # that is now commented out.  terraform.workspace keys into the map var.image to get
-  # the image for dev and prod environments.
+  for_each = local.deployment
+  # this gives us access to the mapping in the locals above through the each keyword
+  image_in = each.value.image
+  # these are the values of each of the "image" defined in the locals above
 }
-# thus root main.tf will get the image from image main.tf
+
 
 
 
@@ -291,11 +382,25 @@ module "container" {
   # not count in the container module itself.
   # the local defintion is in variables.tf
   
+  
+  
   # rename "name" as "name_in" and this will be passed into the container/main.tf module
   name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
+  
+  
   # rename "image" as "image_in" and this will be passed into the container/main.tf module
-  image_in = module.image.image_out
+  ##image_in = module.image.image_out
+  ## edit the above with the new image module name "nodered_image".  See above
+ # image_in = module.nodered_image.image_out
+ 
+  # the above needs to change with the generic module "image" now (see above).
+  image_in = module.image["nodered"].image_out
+  # For now key into this directly with the ["nodered"]
+  
+  
+  
+  
   
   # for ports get rid of the nested ports{} here and rename the ports as 
   # int_port_in and ext_port_in.  These ports are exportable to the container/main.tf
@@ -310,10 +415,16 @@ module "container" {
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
   container_path_in = "/data"
     
+    
+    
   # https://developer.hashicorp.com/terraform/language/expressions/references
   # https://developer.hashicorp.com/terraform/language/expressions/strings
   # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
-  host_path_in = "${path.cwd}/noderedvol"
+  
+  # host_path_in = "${path.cwd}/noderedvol"
+  # Get rid of the host_path_in as part of the null_resource cleanup and conversion to using
+  # the docker volume resource in the container/main.tf
+  # this is also removed in container/variables.tf
   
 }
 

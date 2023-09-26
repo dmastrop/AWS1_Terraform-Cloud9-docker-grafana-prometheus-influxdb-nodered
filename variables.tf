@@ -21,18 +21,45 @@
 # }
 
 
+# ## ORIGINAL varaible "image" needs to support multiple images "nodered_image" and "influxdb_image"
+# ## this is best done by adding a new block for the dev and production mapping. See below
+# variable "image" {
+#   # need to set up a map for the image for both dev and prod
+#   type = map
+#   description = "image for the container based upon deployment env"
+#   default = {
+#     dev = "nodered/node-red:latest"
+#     # this is the latest most fully featured nodered image for development. Has latest features
+#     prod = "nodered/node-red:latest-minimal"
+#     # minimal will be the tag of this production image with less features and less of attack security surface
+#   }
+# }
+
 
 variable "image" {
   # need to set up a map for the image for both dev and prod
   type = map
   description = "image for the container based upon deployment env"
+  
   default = {
+  
+  nodered = {
     dev = "nodered/node-red:latest"
     # this is the latest most fully featured nodered image for development. Has latest features
     prod = "nodered/node-red:latest-minimal"
     # minimal will be the tag of this production image with less features and less of attack security surface
-  }
-}
+    }
+  
+  influxdb = {
+    dev = "quay.io/influxdb/influxdb:v2.0.2"
+    prod = "quay.io/influxdb/influxdb:v2.0.2"
+    # use the same version for now on the influxdb
+    }
+  
+  } # this brace is for the default{}
+
+} # this trailing brace is for variable "image"
+
 
 
 

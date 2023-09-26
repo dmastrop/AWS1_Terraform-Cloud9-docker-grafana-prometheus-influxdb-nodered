@@ -1,5 +1,12 @@
 # https://registry.terraform.io/providers/kreuzwerker/docker/2.15.0/docs/resources/image
-resource "docker_image" "nodered_image" {
+
+# make this more generic for any image (not just nodered_image)
+# this aligns with the multiple images from single image module code
+# Also make similar change in image/outputs.t
+resource "docker_image" "container_image" {
+
+
+#resource "docker_image" "nodered_image" {
   # name of the image itself. This is the docker hub name reference not an arbitrary name that we are assigning.
   ## name = "nodered/node-red:latest"
   
