@@ -20,6 +20,10 @@ resource "random_string" "random" {
   # STAGE2 get rid of this:
   #count = local.container_count
   
+  # As part of STAGE 3 of container module add back in the count logic so that we can generate a 
+  # unique random_string per instance of per application (key; for example nodered and infusedb)
+  count = var.count_in
+  
   for_each = local.deployment
   # STAGE2 this will ensure that number of random strings will coincide with number of containers
   
@@ -27,6 +31,10 @@ resource "random_string" "random" {
   special = false
   upper = false
 }
+
+
+
+
 
 
 
@@ -44,6 +52,11 @@ resource "docker_container" "nodered_container" {
   ## this is not required in the container/main.tf (here)
   ## count will be kept in the root/main.tf
   ## count = local.container_count
+  
+  # As part of STAGE 3 of the module container, add back in the count logic
+  # count_in is fully defined in the root/main.tf based upon container_count in the 
+  # locals of root/main.tf
+  count = var.count_in
   
   ## create a var.name_in because the name is imported in from root/maintf
   ## in root/main.tf this name is "name_in"
@@ -67,34 +80,39 @@ resource "docker_container" "nodered_container" {
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
   volumes {
-  container_path = var.container_path_in
-  # var.conltainer_path_in is from root/main.tf and is "/data"
+    container_path = var.container_path_in
+    # var.conltainer_path_in is from root/main.tf and is "/data" for "nodered" for example
+    # it will be different for infusedb application, etc....
   
   
-  # this is per the nodered documentation. See above notes in the null_resource
-  #  host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
-  # this is the fully qualified path to the volume in my workspace
+    # this is per the nodered documentation. See above notes in the null_resource
+    #  host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
+    # this is the fully qualified path to the volume in my workspace
+      
+    # we need to make this host_path dynamic in case the directory of this noderedvol changes.
+    # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
+    # https://developer.hashicorp.com/terraform/language/expressions/references
+    # https://developer.hashicorp.com/terraform/language/expressions/strings
+    # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
     
-  # we need to make this host_path dynamic in case the directory of this noderedvol changes.
-  # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
-  # https://developer.hashicorp.com/terraform/language/expressions/references
-  # https://developer.hashicorp.com/terraform/language/expressions/strings
-  # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
-  
-  # after getting rid of the null_resource local-exec provisioner in root/main.tf
-  # we can use a better alternative for this below for the host_path
-  #host_path = var.host_path_in
-  
-  #volume_name = "${var.name_in}-volume"
-  # This will create discrete container volumes for each container based upon the container name
-  # imported from root/main.tf name_in (join command)
-  
-  ## now that we create the resource "docker_volume" below we can simplify this volume_name above as
-  ## this, avoiding the use of interpolation:
-  volume_name = docker_volume.container_volume.name
+    # after getting rid of the null_resource local-exec provisioner in root/main.tf
+    # we can use a better alternative for this below for the host_path
+    #host_path = var.host_path_in
+    
+    #volume_name = "${var.name_in}-volume"
+    # This will create discrete container volumes for each container based upon the container name
+    # imported from root/main.tf name_in (join command)
+    
+    ## now that we create the resource "docker_volume" below we can simplify this volume_name above as
+    ## this, avoiding the use of interpolation:
+    volume_name = docker_volume.container_volume.name
   
   }
 }  
+
+
+
+
 
 
 resource "docker_volume" "container_volume" {
@@ -107,6 +125,10 @@ resource "docker_volume" "container_volume" {
 # this no longer occurs with the volume resrouce.
 # https://www.udemy.com/course/terraform-certified/learn/lecture/23431936#questions/20465070
 
+  # As part of STAGE 3 of the module container, add back in the count logic
+  # See above. This has been added to the resource docker_container and the docker_volume and the 
+  # random_string.
+  count = var.count_in
   
   ##name = "${docker_container.nodered_container.name}-volume"
   # This above create a cycle dependency problem with the volume_name above
