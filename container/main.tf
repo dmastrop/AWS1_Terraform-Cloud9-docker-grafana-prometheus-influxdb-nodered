@@ -92,7 +92,10 @@ resource "docker_container" "nodered_container" {
   ## Use var.int_port_in and var.ext_port_in from the naming in root/main.tf
   ports {
     internal = var.int_port_in
-    external = var.ext_port_in
+    
+    #external = var.ext_port_in
+    # As part of STAGE 3 of the container module add the count.index to the external port definition above
+    external = var.ext_port_in[count.index]
   }
   
   
