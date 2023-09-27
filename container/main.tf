@@ -87,7 +87,7 @@ resource "docker_container" "nodered_container" {
   # we are using count now so we cannot access each.key in this container/main.tf
   # note the replacements of each.key in the code above with var.name_in and count.index
   # This will provide unique names across all instances for each application (key, or var.name_in)
-  name_in = join("-", [var.name_in, terraform.workspace, random_string.random[count.index].result])
+  name = join("-", [var.name_in, terraform.workspace, random_string.random[count.index].result])
   
 
 
