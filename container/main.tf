@@ -58,10 +58,29 @@ resource "docker_container" "nodered_container" {
   # locals of root/main.tf
   count = var.count_in
   
+  
+  
+  
+  
   ## create a var.name_in because the name is imported in from root/maintf
   ## in root/main.tf this name is "name_in"
-  name = var.name_in
+  #name = var.name_in
   
+  # For STAGE 3 of the container module this name = name_in is no longer sufficient
+  # name_in is just each.key of root/main.tf or "nodered" and "infusedb"
+  # Add back the original logic that was in root/main.tf
+  # The original code from root/main.tf is:
+  # name_in = join("-", [each.key, terraform.workspace, random_string.random[each.key].result])
+  # each.key is not accessible in container/main.tf. 
+  
+  # we are using count now so we cannot access each.key in this container/main.tf
+  # note the replacements of each.key in the code above with var.name_in and count.index
+  # This will provide unique names across all instances for each application (key, or var.name_in)
+  name_in = join("-", [var.name_in, terraform.workspace, random_string.random[count.index].result])
+  
+
+
+
  
   ##image = module.image.image_out
   ## for the container module this image can be received from the root/main.tf
