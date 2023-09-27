@@ -162,28 +162,35 @@ variable "ext_port" {
   
 # }
 
-## comment out the above
-## local value to replace the varaible "container_count" so that we can incorporate a function call and make this 
-## locals container_count more extensible to the multiple ext_port multi-container scenario
-# with locals we can align the number of external ports in terraform.tfvars to the count through this same "length" function call.
-## https://developer.hashicorp.com/terraform/language/values/locals
-locals {
-  ## container_count = length(var.ext_port)
-  # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
+## comment out the above and .....
+
+
+
+
+# # For STAGE 2 of the container module in root/main.tf we are getting rid of the 
+# # use of the container_count, so comment this entire block out.
+
+# ## local value to replace the varaible "container_count" so that we can incorporate a function call and make this 
+# ## locals container_count more extensible to the multiple ext_port multi-container scenario
+# # with locals we can align the number of external ports in terraform.tfvars to the count through this same "length" function call.
+# ## https://developer.hashicorp.com/terraform/language/values/locals
+# locals {
+#   ## container_count = length(var.ext_port)
+#   # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
   
-  ## container_count = length(lookup(var.ext_port, var.env))
-  # here we need to apply what we did for the resource docker_image in main.tf. Use the var.env as a key into the map var.ext_port
-  # The lookup will apply the actual environment and get the count in that environment. So we can have different container_counts 
-  # in different environments. For example if there are ports 1980, 1981, 1982 for env=dev and ports 1880, 1881 for env=prod
-  # there will be 3 containers deployed if this is dev env and there will be 2 containers deployed if this is a prod env.
+#   ## container_count = length(lookup(var.ext_port, var.env))
+#   # here we need to apply what we did for the resource docker_image in main.tf. Use the var.env as a key into the map var.ext_port
+#   # The lookup will apply the actual environment and get the count in that environment. So we can have different container_counts 
+#   # in different environments. For example if there are ports 1980, 1981, 1982 for env=dev and ports 1880, 1881 for env=prod
+#   # there will be 3 containers deployed if this is dev env and there will be 2 containers deployed if this is a prod env.
   
-  # remove var.env and replace with terraform.workspace for environment setting
-  ## container_count = length(lookup(var.ext_port, terraform.workspace))
+#   # remove var.env and replace with terraform.workspace for environment setting
+#   ## container_count = length(lookup(var.ext_port, terraform.workspace))
   
-  # further optimization. We can replace the lookup with direct reference var.ext_port[terraform.workspace] similar to the valudation code for the 
-  # var.ext_port (see above), i.e. var.ext_port["dev"] and var.ext_port["prod"]
-  container_count = length(var.ext_port[terraform.workspace])
-}
+#   # further optimization. We can replace the lookup with direct reference var.ext_port[terraform.workspace] similar to the valudation code for the 
+#   # var.ext_port (see above), i.e. var.ext_port["dev"] and var.ext_port["prod"]
+#   container_count = length(var.ext_port[terraform.workspace])
+# }
 
 
 

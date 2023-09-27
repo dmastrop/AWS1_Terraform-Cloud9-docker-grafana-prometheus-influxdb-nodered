@@ -228,7 +228,37 @@ module "image" {
 
 
 
+# ## STAGE 1:
+# # use random resource to generate unique names for the multi-container deployment
+# # https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
+# resource "random_string" "random" {
+#   #count = 2
+#   # add count to get the 2 random_string resources rather than adding them one by one.
+#   #count = var.container_count
+  
+#   # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
+#   # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
+#   # same needs to be done in the docker_container resource below.
+#   count = local.container_count
+  
+#   length = 4
+#   special = false
+#   upper = false
+# }
 
+
+# ## Comment out this for Count main.tf version2
+# # resource "random_string" "random2" {
+# #   length = 4
+# #   special = false
+# #   upper = false
+# # }
+
+
+
+
+
+## STAGE 2:
 # use random resource to generate unique names for the multi-container deployment
 # https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
 resource "random_string" "random" {
@@ -239,7 +269,11 @@ resource "random_string" "random" {
   # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
   # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
   # same needs to be done in the docker_container resource below.
-  count = local.container_count
+  # STAGE2 get rid of this:
+  #count = local.container_count
+  
+  for_each = local.deployment
+  # STAGE2 this will ensure that number of random strings will coincide with number of containers
   
   length = 4
   special = false
@@ -247,12 +281,14 @@ resource "random_string" "random" {
 }
 
 
-## Comment out this for Count main.tf version2
-# resource "random_string" "random2" {
-#   length = 4
-#   special = false
-#   upper = false
-# }
+
+
+
+
+
+
+
+
 
 
 
@@ -387,74 +423,74 @@ resource "random_string" "random" {
 
 
 
-### STAGE 1 module "container"
+# ### STAGE 1 module "container"
 
-## modularize the resource docker container above. 
-## The resource itself is moved to the container/main.tf
-## See below:
-module "container" {
-  # indicate where the container module is located (folder)
-  source = "./container"
+# ## modularize the resource docker container above. 
+# ## The resource itself is moved to the container/main.tf
+# ## See below:
+# module "container" {
+#   # indicate where the container module is located (folder)
+#   source = "./container"
   
   
   
-  # as of 0.13 terraform the depends_on works in modules as well.
-  # depends_on = [null_resource.docker_volume]
-  ## remove the above now that we are getting rid of the "null_resource"
-  ## local-exec provisioner for the docker volume (see above; it has been commented out)
+#   # as of 0.13 terraform the depends_on works in modules as well.
+#   # depends_on = [null_resource.docker_volume]
+#   ## remove the above now that we are getting rid of the "null_resource"
+#   ## local-exec provisioner for the docker volume (see above; it has been commented out)
   
   
   
-  count = local.container_count
-  # keep count here. We want to count container module deployments and
-  # not count in the container module itself.
-  # the local defintion is in variables.tf
+#   count = local.container_count
+#   # keep count here. We want to count container module deployments and
+#   # not count in the container module itself.
+#   # the local defintion is in variables.tf
   
   
   
-  # rename "name" as "name_in" and this will be passed into the container/main.tf module
-  name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+#   # rename "name" as "name_in" and this will be passed into the container/main.tf module
+#   name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   
   
   
-  # rename "image" as "image_in" and this will be passed into the container/main.tf module
-  ##image_in = module.image.image_out
-  ## edit the above with the new image module name "nodered_image".  See above
- # image_in = module.nodered_image.image_out
+#   # rename "image" as "image_in" and this will be passed into the container/main.tf module
+#   ##image_in = module.image.image_out
+#   ## edit the above with the new image module name "nodered_image".  See above
+# # image_in = module.nodered_image.image_out
  
-  # the above needs to change with the generic module "image" now (see above).
-  image_in = module.image["nodered"].image_out
-  # For now key into this directly with the ["nodered"]
+#   # the above needs to change with the generic module "image" now (see above).
+#   image_in = module.image["nodered"].image_out
+#   # For now key into this directly with the ["nodered"]
   
   
   
   
   
-  # for ports get rid of the nested ports{} here and rename the ports as 
-  # int_port_in and ext_port_in.  These ports are exportable to the container/main.tf
-  # internal = var.internal_port
-  # external = var.ext_port[terraform.workspace][count.index]
-  int_port_in = var.internal_port
-  ext_port_in = var.ext_port[terraform.workspace][count.index]
-  # this ext_port is still a map into variables.tf and terraform
+#   # for ports get rid of the nested ports{} here and rename the ports as 
+#   # int_port_in and ext_port_in.  These ports are exportable to the container/main.tf
+#   # internal = var.internal_port
+#   # external = var.ext_port[terraform.workspace][count.index]
+#   int_port_in = var.internal_port
+#   ext_port_in = var.ext_port[terraform.workspace][count.index]
+#   # this ext_port is still a map into variables.tf and terraform
   
   
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
-  container_path_in = "/data"
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
+#   container_path_in = "/data"
     
     
     
-  # https://developer.hashicorp.com/terraform/language/expressions/references
-  # https://developer.hashicorp.com/terraform/language/expressions/strings
-  # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+#   # https://developer.hashicorp.com/terraform/language/expressions/references
+#   # https://developer.hashicorp.com/terraform/language/expressions/strings
+#   # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
   
-  # host_path_in = "${path.cwd}/noderedvol"
-  # Get rid of the host_path_in as part of the null_resource cleanup and conversion to using
-  # the docker volume resource in the container/main.tf
-  # this is also removed in container/variables.tf
+#   # host_path_in = "${path.cwd}/noderedvol"
+#   # Get rid of the host_path_in as part of the null_resource cleanup and conversion to using
+#   # the docker volume resource in the container/main.tf
+#   # this is also removed in container/variables.tf
   
-}
+# }
 
 
 
@@ -492,7 +528,8 @@ module "container" {
   # rename "name" as "name_in" and this will be passed into the container/main.tf module
   #name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
   # For STAGE 2:
-  name_in = join("-", [each.key, terraform.workspace, random_string.random[count.index].result])
+  name_in = join("-", [each.key, terraform.workspace, random_string.random[each.key].result])
+  # NOTE that count.index here was replaced by the each.key
   
   
   
@@ -521,7 +558,7 @@ module "container" {
   # For STAGE 2:
   # key into the local values above
   int_port_in = each.value.int
-  ext_port_in = each.value.ext
+  ext_port_in = each.value.ext[0]
   
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
