@@ -24,8 +24,19 @@ resource "random_string" "random" {
   # unique random_string per instance of per application (key; for example nodered and infusedb)
   count = var.count_in
   
-  for_each = local.deployment
+  
+  
+  #for_each = local.deployment
+  
   # STAGE2 this will ensure that number of random strings will coincide with number of containers
+  # STAGE 3. This for_each can no longer be used with count_in. They are mutually exclusive and this will generate
+  # a terraform validate syntax error.  The number of random_strings will be generated in accordance with
+  # the var.count_in which is calculated in the root/main.tf and passed into this module.
+  # The calculation in root/main.tf is count_in = each.value.container_count
+  # with the container_count defined in the locals of root/main.tf based upon the number of external ports
+  # defined for the application in the terraform.tfvars file of the root.
+  
+  
   
   length = 4
   special = false
