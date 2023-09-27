@@ -28,4 +28,8 @@ variable "container_path_in" {
 #   # the docker volume resource in the container/main.tf
     # This is also removed in the root/main.tf
 
-
+# As part of STAGE 3 of the container module incorporating the for_each with count, add this 
+# count_in that is used in the root/main.tf
+variable "count_in" {
+    
+}

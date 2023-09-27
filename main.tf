@@ -92,6 +92,10 @@
 locals {
   deployment = {
     nodered = {
+      # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
+      # Need to add the key ["nodered"] as well into this container_count definition
+      container_count = length(var.ext_port["nodered"][terraform.workspace])
+      
       image = var.image["nodered"][terraform.workspace]
       
       int = 1880
@@ -102,6 +106,10 @@ locals {
     }
     
     influxdb = {
+      # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
+      # Need to add the key ["influxdb"] as well into this container_count definition
+      container_count = length(var.ext_port["influxdb"][terraform.workspace])
+    
       image = var.image["influxdb"][terraform.workspace]
       
       int = 8086
@@ -257,28 +265,38 @@ module "image" {
 
 
 
+# ## Comment out this entire block for STAGE 3 random_string (see below)
+# ## STAGE 2:
+# # use random resource to generate unique names for the multi-container deployment
+# # https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
+# resource "random_string" "random" {
+#   #count = 2
+#   # add count to get the 2 random_string resources rather than adding them one by one.
+#   #count = var.container_count
+  
+#   # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
+#   # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
+#   # same needs to be done in the docker_container resource below.
+#   # STAGE2 get rid of this:
+#   #count = local.container_count
+  
+#   for_each = local.deployment
+#   # STAGE2 this will ensure that number of random strings will coincide with number of containers
+  
+#   length = 4
+#   special = false
+#   upper = false
+# }
 
-## STAGE 2:
-# use random resource to generate unique names for the multi-container deployment
-# https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
-resource "random_string" "random" {
-  #count = 2
-  # add count to get the 2 random_string resources rather than adding them one by one.
-  #count = var.container_count
-  
-  # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
-  # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
-  # same needs to be done in the docker_container resource below.
-  # STAGE2 get rid of this:
-  #count = local.container_count
-  
-  for_each = local.deployment
-  # STAGE2 this will ensure that number of random strings will coincide with number of containers
-  
-  length = 4
-  special = false
-  upper = false
-}
+
+
+## STAGE 3 random_string:
+# The current problem with where it is at right now is that if running multiple instances of an application they will all 
+# use the same random string since the random string is in root/main.tf and not in the container/main.tf where each docker 
+# instance will be created.  The STAGE 2 random_string block above needs to be commented out in root/main.tf and added into the 
+# container/main.tf
+# Each application type currently will use the same random string even if we are creating multiple instances of each.   
+# Moving this to containers/main.tf will resolve this issue
 
 
 
@@ -494,7 +512,103 @@ resource "random_string" "random" {
 
 
 
-## STAGE 2: Incorporation of the for_each logic into the container module resource
+# ## STAGE 2: Incorporation of the for_each logic into the container module resource
+
+# ## modularize the resource docker container above. 
+# ## The resource itself is moved to the container/main.tf
+# ## See below:
+# module "container" {
+#   # indicate where the container module is located (folder)
+#   source = "./container"
+  
+  
+#   # Add the for_each logic to this STAGE 2 module "container"container
+#   for_each = local.deployment
+  
+#   # as of 0.13 terraform the depends_on works in modules as well.
+#   # depends_on = [null_resource.docker_volume]
+#   ## remove the above now that we are getting rid of the "null_resource"
+#   ## local-exec provisioner for the docker volume (see above; it has been commented out)
+  
+  
+#   # In STAGE 2 must remove count for now. The for_each above will track the multiple
+#   # instances. We can use count later on for a different purpose.
+  
+#   #count = local.container_count
+  
+#   # keep count here. We want to count container module deployments and
+#   # not count in the container module itself.
+#   # the local defintion is in variables.tf
+  
+  
+  
+  
+#   # rename "name" as "name_in" and this will be passed into the container/main.tf module
+#   #name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+#   # For STAGE 2:
+#   name_in = join("-", [each.key, terraform.workspace, random_string.random[each.key].result])
+#   # NOTE that count.index here was replaced by the each.key
+  
+  
+  
+#   # rename "image" as "image_in" and this will be passed into the container/main.tf module
+#   ##image_in = module.image.image_out
+#   ## edit the above with the new image module name "nodered_image".  See above
+# # image_in = module.nodered_image.image_out
+ 
+#   # the above needs to change with the generic module "image" now (see above).
+#   #image_in = module.image["nodered"].image_out
+#   # For now key into this directly with the ["nodered"]
+#   # For STAGE 2:
+#   image_in = module.image[each.key].image_out
+  
+  
+
+#   # for ports get rid of the nested ports{} here and rename the ports as 
+#   # int_port_in and ext_port_in.  These ports are exportable to the container/main.tf
+#   # internal = var.internal_port
+#   # external = var.ext_port[terraform.workspace][count.index]
+ 
+#   #int_port_in = var.internal_port
+#   #ext_port_in = var.ext_port[terraform.workspace][count.index]
+#   # this ext_port is still a map into variables.tf and terraform
+  
+#   # For STAGE 2:
+#   # key into the local values above
+#   int_port_in = each.value.int
+  
+#   ext_port_in = each.value.ext[0]
+#   # Since we are temporarily not using the count, force the first port (single port) by using the [0]
+#   # Once we reintroduce count we will be able to create multiple containers of each type in accordance to the terraform.tfvars
+#   # external port list 
+  
+  
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
+#   #container_path_in = "/data"
+  
+#   # For STAGE 2:
+#   container_path_in = each.value.container_path
+    
+    
+    
+#   # https://developer.hashicorp.com/terraform/language/expressions/references
+#   # https://developer.hashicorp.com/terraform/language/expressions/strings
+#   # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+  
+#   # host_path_in = "${path.cwd}/noderedvol"
+#   # Get rid of the host_path_in as part of the null_resource cleanup and conversion to using
+#   # the docker volume resource in the container/main.tf
+#   # this is also removed in container/variables.tf
+  
+# }
+
+
+
+## STAGE 3: Incorporation of the for_each logic into the container module resource and add
+## back the count index logic to support multiple instances of each application based upon the
+## external port list array in terraform.tfvars
+## Comment out STAGE 2 of the container above.
 
 ## modularize the resource docker container above. 
 ## The resource itself is moved to the container/main.tf
@@ -502,6 +616,14 @@ resource "random_string" "random" {
 module "container" {
   # indicate where the container module is located (folder)
   source = "./container"
+  
+  # For STAGE 3 add back in the count_in that needs to be passed to container/main.tf
+  # this permits multiple instances of each application type!!
+  count_in = each.value.container_count
+  # the container.count was added into the locals above in this root/main.tf
+  # it was moved from root/varaibles.tf
+  # this container_count calculates the number of containers for each key (application type), i.e.
+  # "nodred" and "influxdb"
   
   
   # Add the for_each logic to this STAGE 2 module "container"container
@@ -527,9 +649,18 @@ module "container" {
   
   # rename "name" as "name_in" and this will be passed into the container/main.tf module
   #name_in = join("-", ["nodered", terraform.workspace, random_string.random[count.index].result])
+ 
   # For STAGE 2:
-  name_in = join("-", [each.key, terraform.workspace, random_string.random[each.key].result])
+  ## name_in = join("-", [each.key, terraform.workspace, random_string.random[each.key].result])
   # NOTE that count.index here was replaced by the each.key
+  
+  # For STAGE 3 comment out the above and use this:
+  name_in = each.key
+  # this is simply the key "nodered" or "influxdb"influxdb
+  # the rest of the logic will be moved into the cantainer/main.tf since the random strings for all 
+  # of the instances of each type will be generated there.
+  # We use the random_string to generate unique names across all instances of each application type.
+  # So here we just pass in the key into the container/main.tf as "name_in"
   
   
   
@@ -558,7 +689,15 @@ module "container" {
   # For STAGE 2:
   # key into the local values above
   int_port_in = each.value.int
-  ext_port_in = each.value.ext[0]
+  
+  # ext_port_in = each.value.ext[0]
+  # # Since we are temporarily not using the count, force the first port (single port) by using the [0]
+  # # Once we reintroduce count we will be able to create multiple containers of each type in accordance to the terraform.tfvars
+  # # external port list 
+  
+  # Get rid of the [0] above. It is no longer needed now that the count index is being added back in
+   ext_port_in = each.value.ext
+  
   
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
@@ -579,9 +718,6 @@ module "container" {
   # this is also removed in container/variables.tf
   
 }
-
-
-
 
 
 

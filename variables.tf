@@ -174,6 +174,7 @@ variable "ext_port" {
 # ## locals container_count more extensible to the multiple ext_port multi-container scenario
 # # with locals we can align the number of external ports in terraform.tfvars to the count through this same "length" function call.
 # ## https://developer.hashicorp.com/terraform/language/values/locals
+
 # locals {
 #   ## container_count = length(var.ext_port)
 #   # The count will be adjusted accordingly to how many ports are specified in the terraform.tfvars via the length(var.ext_port) function call.
@@ -189,6 +190,7 @@ variable "ext_port" {
   
 #   # further optimization. We can replace the lookup with direct reference var.ext_port[terraform.workspace] similar to the valudation code for the 
 #   # var.ext_port (see above), i.e. var.ext_port["dev"] and var.ext_port["prod"]
+
 #   container_count = length(var.ext_port[terraform.workspace])
 # }
 

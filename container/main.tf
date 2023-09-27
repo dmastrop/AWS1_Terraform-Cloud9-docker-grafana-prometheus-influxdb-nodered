@@ -1,3 +1,37 @@
+## STAGE 3 random_string container/main.tf:
+# The current problem with where it is at right now is that if running multiple instances of an application they will all 
+# use the same random string since the random string is in root/main.tf and not in the container/main.tf where each docker 
+# instance will be created.  The STAGE 2 random_string block above needs to be commented out in root/main.tf and added into the 
+# container/main.tf
+# Each application type currently will use the same random string even if we are creating multiple instances of each.   
+# Moving this to containers/main.tf will resolve this issue
+
+
+# use random resource to generate unique names for the multi-container deployment
+# https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string
+resource "random_string" "random" {
+  #count = 2
+  # add count to get the 2 random_string resources rather than adding them one by one.
+  #count = var.container_count
+  
+  # comment out the above. We need to convert the var.container_count to a local (see varaibles.tf) so that we can do a function call
+  # on the count to align to the number of ext_port specificed in the terraform.tfvars file.
+  # same needs to be done in the docker_container resource below.
+  # STAGE2 get rid of this:
+  #count = local.container_count
+  
+  for_each = local.deployment
+  # STAGE2 this will ensure that number of random strings will coincide with number of containers
+  
+  length = 4
+  special = false
+  upper = false
+}
+
+
+
+
+
 # deployment of the container based upon the image  "nodered_image" above
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
