@@ -130,6 +130,7 @@ resource "docker_container" "nodered_container" {
     #volume_name = docker_volume.container_volume.name
     # As part of STAGE 3 incorporate the count.index to the volumne name as well
     volume_name = docker_volume.container_volume[count.index].name
+    # This .name is defined below in the docker_volume resource
   
   }
 }  
@@ -160,7 +161,12 @@ resource "docker_volume" "container_volume" {
   # without the container name.   This syntax will not work.
   # thus we need to remove this and use this:
   
-  name = "${var.name_in}-volume"
+  #name = "${var.name_in}-volume"
+  # For STAGE 3 of container module add in the random string with the count.index to ensure that 
+  # the volume name is unique per instance per applcation type (key or var.name_in)
+  name = "${var.name_in}-${random_string.random[count.index].result}-volume"
+
+
   
   # to prevent the destruction of the volume with terraform destroy need to add lifecycle block below
   # https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle
