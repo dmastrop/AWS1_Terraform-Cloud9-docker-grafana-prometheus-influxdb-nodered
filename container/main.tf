@@ -127,7 +127,9 @@ resource "docker_container" "nodered_container" {
     
     ## now that we create the resource "docker_volume" below we can simplify this volume_name above as
     ## this, avoiding the use of interpolation:
-    volume_name = docker_volume.container_volume.name
+    #volume_name = docker_volume.container_volume.name
+    # As part of STAGE 3 incorporate the count.index to the volumne name as well
+    volume_name = docker_volume.container_volume[count.index].name
   
   }
 }  
