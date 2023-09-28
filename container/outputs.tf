@@ -38,9 +38,17 @@
 # #   description = "the IP address and port of the nodered container"
 # # }
  
-# # use a "for" loop the optimize this code.
-# # 
+
+
+
+
+
+
+
+
 # output "IP_addresses_and_ports_pairs" {
+# use a for loop for this. See below
+
 # # outputs cannot contain spaces in name in newer versions
 
 #   #value = join(":", [docker_container.nodered_container.ip_address, docker_container.nodered_container.ports[0].external])
@@ -58,6 +66,7 @@
 #   # new syntax is below:
 #   # value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address, i.ports[0].external])]
 #   # value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
+
 #   value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
 #   # NOTE: we cannot remove the splat [*] here like the container names above.
  
@@ -78,4 +87,27 @@
   
 #   # sensitive = true
   
+# }
+
+
+
+# For post STAGE 3 with the count and for_each logic code:
+# this is the original code
+# value = [for i in docker_container.nodered_container[*]: join(":", [i.network_data[0].ip_address],i.ports[*]["external"])]
+# note that this output we do not see is for the root/main.tf
+# root/main.tf referneces this through module container in the root/outputs.tf
+output "application_access" {
+    value = {for x in docker_container.app_container[*]: x.name => join(":", [x.network_data[0].ip_address], x.ports[*]["external"])}
+}
+
+
+# NOTES:
+# the syntax used in the output above is illustrated below with the terraform console ouptut
+# It will be a list of all of the  full names of the container = ip_address:external_port of those containers
+# > {for x in [1,2,3, "blue"]: x => "fish"}
+# {
+#   "1" = "fish"
+#   "2" = "fish"
+#   "3" = "fish"
+#   "blue" = "fish"
 # }

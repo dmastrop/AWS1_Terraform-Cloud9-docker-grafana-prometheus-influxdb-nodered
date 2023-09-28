@@ -13,7 +13,7 @@ variable "int_port_in" {
 }
 
 variable "ext_port_in" {
-    type = number
+    #type = number
     
 }
 

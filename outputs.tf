@@ -46,6 +46,9 @@
 # # modularize this as well via module.container[*] using splat function.
 # # we can then extract the actual outputs from the module.container output as shown below.
 
+
+
+
 # output "Container_names" {
 #   #value = docker_container.nodered_container.name
   
@@ -80,8 +83,14 @@
 # #   description = "the IP address and port of the nodered container"
 # # }
  
+ 
+ 
+ 
+ 
+ 
 # # use a "for" loop the optimize this code.
 # # 
+
 # output "IP_addresses_and_ports_pairs" {
 # # outputs cannot contain spaces in name in newer versions
 
@@ -110,6 +119,7 @@
 #   # this is outputing as multiple lists of the item. We want a single list of multiple items
 #   # we cannot remove the [*] in this output in container/outputs.tf (like above with the names)
 #   # so flatten the value here in root/outputs.tf
+
 #   value = flatten(module.container[*].IP_addresses_and_ports_pairs)
   
   
@@ -132,3 +142,19 @@
 #   # sensitive = true
   
 # }
+
+
+# For post STAGE 3 with the count and for_each logic code:
+# this is the original code:
+# value = flatten(module.container[*].IP_addresses_and_ports_pairs)
+output "application_access" {
+  #value = module.container[*].application_access
+  # this syntax above does not work. Not sure why. Error states that the objecct does not have an attribute named "application_access"
+  description = "The name and port socket for each application instance"
+ 
+  # alternate syntax:  (this works)
+  #value = [for x in module.container[*]: x]
+  # try this. this also works. The for loop is not required since we are not modifying the values from the container/outputs.tf
+  value = module.container[*]
+  
+}

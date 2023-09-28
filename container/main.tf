@@ -54,7 +54,8 @@ resource "random_string" "random" {
 # deployment of the container based upon the image  "nodered_image" above
 # "docker_container" must be used. That cannot be changed.
 # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
-resource "docker_container" "nodered_container" {
+#resource "docker_container" "nodered_container" {
+resource "docker_container" "app_container" {
   
   ##depends_on = [null_resource.docker_volume]
   ## keep depends_on in the root/main.tf
