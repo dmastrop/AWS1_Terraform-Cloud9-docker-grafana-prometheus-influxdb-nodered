@@ -228,4 +228,4 @@ resource "docker_volume" "container_volume" {
     # we want to know if this fails!!
   }
   
-} # this is for the resource "docker-volume"
+} # this is for the resource "docker_volume"
