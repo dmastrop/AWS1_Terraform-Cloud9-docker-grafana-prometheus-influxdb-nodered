@@ -62,6 +62,13 @@ variable "image" {
     prod = "grafana/grafana:latest-ubuntu"
     #  tag of this production image with less features and less of attack security surface
     }
+    
+  prometheus = {
+    dev = "bitnami/prometheus:latest"
+    # Has latest features
+    prod = "bitnami/prometheus:2.47.0"
+    #  tag of this production image with less features and less of attack security surface
+    }
   
   } # this brace is for the default{}
 
