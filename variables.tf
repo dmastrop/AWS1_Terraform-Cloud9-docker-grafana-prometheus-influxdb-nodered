@@ -55,6 +55,13 @@ variable "image" {
     prod = "quay.io/influxdb/influxdb:v2.0.2"
     # use the same version for now on the influxdb
     }
+    
+  grafana = {
+    dev = "grafana/grafana:latest"
+    # Has latest features
+    prod = "grafana/grafana:latest-ubuntu"
+    #  tag of this production image with less features and less of attack security surface
+    }
   
   } # this brace is for the default{}
 

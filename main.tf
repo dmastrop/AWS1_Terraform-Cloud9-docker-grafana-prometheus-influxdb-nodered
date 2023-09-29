@@ -119,6 +119,20 @@ locals {
       container_path  = "/var/lib/influxdb"
       # this is from the influxdb registry docs on docker
     }
+    
+    grafana = {
+      # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
+      # Need to add the key ["grafana"] as well into this container_count definition
+      container_count = length(var.ext_port["grafana"][terraform.workspace])
+      
+      image = var.image["grafana"][terraform.workspace]
+      
+      int = 3000
+      ext = var.ext_port["grafana"][terraform.workspace]
+      # this keys into the terraform.tfvars
+      
+      container_path  = "/var/lib/granfana"
+    }
   }
 }
 
