@@ -176,7 +176,10 @@ resource "docker_volume" "container_volume" {
   #name = "${var.name_in}-volume"
   # For STAGE 3 of container module add in the random string with the count.index to ensure that 
   # the volume name is unique per instance per applcation type (key or var.name_in)
-  name = "${var.name_in}-${random_string.random[count.index].result}-volume"
+ # name = "${var.name_in}-${random_string.random[count.index].result}-volume"
+  
+  # I have added the workspace as well to the volume
+  name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
 
 
   
