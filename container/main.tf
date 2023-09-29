@@ -145,6 +145,41 @@ resource "docker_container" "app_container" {
     # This .name is defined below in the docker_volume resource
   
   }
+  
+  # this next code is to create a containers.txt file with the container name: ip address: external port 
+  # for all the containers in the terraform apply
+  provisioner "local-exec" {
+    #command = "echo ([for i in docker_container.app_container[*]: join(":", [i.self.name],i.ipv4_address,i.self.external)]) >> containers.txt"
+    # the above will not work. Cannot reference the docker_container.app_container in a local provisioner
+    # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nestedblock--ports
+    # note that the self.ports is nested with the "external" per the link above
+    # the for loop is required to index each external port as defined by the keys in the locals file root/locals.tf
+    # the var.ext_port is keyed in and can have several ports per application (key) based on contents of terraform.tfvars
+    
+    #command = "echo ${self.name}: ${self.ip_address}:${join("", [for x in self.ports[*]["external"]: x])} >> containers.txt"
+    # ip_address is deprecated. Requires network_data[0].ip_address
+    command = "echo ${self.name}: ${self.network_data[0].ip_address}:${join("", [for x in self.ports[*]["external"]: x])} >> containers.txt"
+    
+    # add the terraform.workspace to the container.txt name so that each workspace creates different containers.txt file
+    # command = "echo ${self.name}: ${self.network_data[0].ip_address}:${join("", [for x in self.ports[*]["external"]: x])} >> ${terraform.workspace}-containers.txt"
+    # THIS CODE works great but the destroy provisioner below is not allowing terraform.workspace interoplation. See below.
+    # So the entire file will be removed even if in one workspace and other is still active.
+    
+    
+  }
+  
+  # this next provisioner is to delete the containers.txt file on terraform destroy
+  provisioner"local-exec" {
+    when = destroy
+    command = "rm -f containers.txt"
+    # add the code to selectively delete the workspace specific containers.txt file
+   
+    #command = "rm -f ${terraform-workspace}-containers.txt"
+    # this code does not work. The error given is 
+    # Destroy-time provisioners and their connection configurations may only reference attributes of the related resource, via 'self',
+    # count.index', or 'each.key'.
+    # References to other resources during the destroy phase can cause dependency cycles and interact poorly with create_before_destroy.
+  }
 }  
 
 
@@ -198,7 +233,8 @@ resource "docker_volume" "container_volume" {
   # we still have a copy of the volume data. THe data will be stored in a backup folder
   provisioner "local-exec" {
     when = destroy
-    command = "mkdir ${path.cwd}/../backup_workspace_1/backup/"
+    #command = "mkdir ${path.cwd}/../backup/"
+    command = "mkdir ${path.cwd}/../backup_workspace_1/"
     # the backup directory will be created one level up from current working directory which
     # will be in the root workspace directory /home/ubuntu/environment/course7_terraform_docker
     # terraform console: path.cwd = "/home/ubuntu/environment/course7_terraform_docker"
@@ -223,7 +259,8 @@ resource "docker_volume" "container_volume" {
   # self.mountpoint will be tarred and put in the folder of the volume of the same name
   provisioner "local-exec" {
     when = destroy
-    command = "sudo tar -czvf ${path.cwd}/../backup/${self.name}.tar.gz ${self.mountpoint}/"
+    command = "sudo tar -czvf ${path.cwd}/../backup_workspace_1/${self.name}.tar.gz ${self.mountpoint}/"
+    #command = "sudo tar -czvf ${path.cwd}/../backup/${self.name}.tar.gz ${self.mountpoint}/"
     on_failure = fail
     # we want to know if this fails!!
   }
