@@ -198,7 +198,7 @@ resource "docker_volume" "container_volume" {
   # we still have a copy of the volume data. THe data will be stored in a backup folder
   provisioner "local-exec" {
     when = destroy
-    command = "mkdir ${path.cwd}/../backup/"
+    command = "mkdir ${path.cwd}/../workspace_1_backup/backup/"
     # the backup directory will be created one level up from current working directory which
     # will be in the root workspace directory /home/ubuntu/environment/course7_terraform_docker
     # terraform console: path.cwd = "/home/ubuntu/environment/course7_terraform_docker"
