@@ -193,4 +193,39 @@ resource "docker_volume" "container_volume" {
     # terraform destroy -target=module.container[0].docker_container.nodered_container
     # this is cumbersome but is very selective.
   }
-}
+  
+  # add a local provisioner to store the volume in a backup directory so that on terraform destroy
+  # we still have a copy of the volume data. THe data will be stored in a backup folder
+  provisioner "local-exec" {
+    when = destroy
+    command = "mkdir ${path.cwd}/../backup/"
+    # the backup directory will be created one level up from current working directory which
+    # will be in the root workspace directory /home/ubuntu/environment/course7_terraform_docker
+    # terraform console: path.cwd = "/home/ubuntu/environment/course7_terraform_docker"
+    # We do not want to store backups in the git committed code directory.
+    # NOTE: with multiple containers there is a problem. The local provisioner errors stating that the 
+    # folder already exists after the first container
+    # Need to add the on_failure continue 
+    # note that this just creates the backup folder. The backups of the volumes still needs to be done
+    on_failure = continue
+  }
+  
+  # add a second provisioner to backup the actual volumes of all the containers.
+  # must use the self object. Provisioner blocks cannot refer to parent resource by name
+  # https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax#the-self-object
+  # The parent resource here is docker_volume.container_volume
+  # We will use the self.name and self.mountpoint for the name and the mountpoint of each container volume that is
+  # being destroyed.  This will be stored in the backup directory as a tar file.
+  # the self.mountpoint is indicated in this document:
+  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume#mountpoint
+  # both name and mountpoint are attributes of the docker_volume
+  # self.name refers to  name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
+  # self.mountpoint will be tarred and put in the folder of the volume of the same name
+  provisioner "local-exec" {
+    when = destroy
+    command = "sudo tar -czvf ${path.cwd}/../backup/${self.name}.tar.gz ${self.mountpoint}/"
+    on_failure = fail
+    # we want to know if this fails!!
+  }
+  
+} # this is for the resource "docker-volume"
