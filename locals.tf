@@ -57,9 +57,10 @@ locals {
       # this block is created for each container, hence the name _each.
       # We want to create a volume for each of the volumes below listed
       # comment out the container_path above
+      # https://developer.hashicorp.com/terraform/language/expressions/dynamic-blocks
       volumes = [
         {container_path_each = "/var/lib/grafana"},
-        {container_path_each = "etc/grafana"}
+        {container_path_each = "/etc/grafana"}
       ]
     }
     
