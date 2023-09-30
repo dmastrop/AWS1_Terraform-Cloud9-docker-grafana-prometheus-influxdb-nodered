@@ -111,40 +111,68 @@ resource "docker_container" "app_container" {
   }
   
   
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
-  volumes {
-    container_path = var.container_path_in
-    # var.conltainer_path_in is from root/main.tf and is "/data" for "nodered" for example
-    # it will be different for infusedb application, etc....
   
   
-    # this is per the nodered documentation. See above notes in the null_resource
-    #  host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
-    # this is the fully qualified path to the volume in my workspace
+  
+  # Convert this volumes block to a DYNAMIC BLOCK (step 4)
+  # # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/container#nested-schema-for-volumes
+  # # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume
+  # volumes {
+  #   container_path = var.container_path_in
+  #   # var.conltainer_path_in is from root/main.tf and is "/data" for "nodered" for example
+  #   # it will be different for infusedb application, etc....
+  
+  
+  #   # this is per the nodered documentation. See above notes in the null_resource
+  #   #  host_path = "//home/ubuntu/environment/course7_terraform_docker/noderedvol"
+  #   # this is the fully qualified path to the volume in my workspace
       
-    # we need to make this host_path dynamic in case the directory of this noderedvol changes.
-    # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
-    # https://developer.hashicorp.com/terraform/language/expressions/references
-    # https://developer.hashicorp.com/terraform/language/expressions/strings
-    # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
+  #   # we need to make this host_path dynamic in case the directory of this noderedvol changes.
+  #   # we can use a join functino but string interpolation would be better.  This is required to insert the path.cwd into the host_path
+  #   # https://developer.hashicorp.com/terraform/language/expressions/references
+  #   # https://developer.hashicorp.com/terraform/language/expressions/strings
+  #   # https://developer.hashicorp.com/terraform/language/expressions/strings#interpolation
     
-    # after getting rid of the null_resource local-exec provisioner in root/main.tf
-    # we can use a better alternative for this below for the host_path
-    #host_path = var.host_path_in
+  #   # after getting rid of the null_resource local-exec provisioner in root/main.tf
+  #   # we can use a better alternative for this below for the host_path
+  #   #host_path = var.host_path_in
     
-    #volume_name = "${var.name_in}-volume"
-    # This will create discrete container volumes for each container based upon the container name
-    # imported from root/main.tf name_in (join command)
+  #   #volume_name = "${var.name_in}-volume"
+  #   # This will create discrete container volumes for each container based upon the container name
+  #   # imported from root/main.tf name_in (join command)
     
-    ## now that we create the resource "docker_volume" below we can simplify this volume_name above as
-    ## this, avoiding the use of interpolation:
-    #volume_name = docker_volume.container_volume.name
-    # As part of STAGE 3 incorporate the count.index to the volumne name as well
-    volume_name = docker_volume.container_volume[count.index].name
-    # This .name is defined below in the docker_volume resource
+  #   ## now that we create the resource "docker_volume" below we can simplify this volume_name above as
+  #   ## this, avoiding the use of interpolation:
+  #   #volume_name = docker_volume.container_volume.name
+  #   # As part of STAGE 3 incorporate the count.index to the volumne name as well
+  #   volume_name = docker_volume.container_volume[count.index].name
+  #   # This .name is defined below in the docker_volume resource
   
+  # }
+  
+  
+  # Comment out the entire block above (volumes block) and convert this to a DYNAMIC BLOCK (step 4)
+  dynamic volumes {
+    for_each = var.volumes_in
+    # this will do a for_each for the volumes listed in root/locals.tf and root/main.tf
+    # for grafana this is the /var/lib/grafana and /etc/grafana
+    content {
+      #container_path = var.container_path_in
+      container_path = volumes.value["container_path_each"]
+      # these are the literal values of /var/lib/grafana and /etc/grafana
+      
+      #volume_name = docker_volume.container_volume[count.index].name
+      volume_name = docker_volume.container_volume[volumes.key].name
+      # we are no longer using count.index
+      # volumes.key is the number of volumes in each key (grafana, prometheus, influxdb, nodered) as
+      # in the root/locals.tf. For grafana this is [0] and [1] for the 2 container_path_each
+      
+      
+    }
   }
+  
+  
+  
   
   # this next code is to create a containers.txt file with the container name: ip address: external port 
   # for all the containers in the terraform apply
@@ -200,7 +228,13 @@ resource "docker_volume" "container_volume" {
   # As part of STAGE 3 of the module container, add back in the count logic
   # See above. This has been added to the resource docker_container and the docker_volume and the 
   # random_string.
-  count = var.count_in
+  
+  #count = var.count_in
+  # DYNAMIC BLOCK (step 5). commment out the above
+  count = length(var.volumes_in)
+  # for grafana this is equal to 2 and uses index [0] and [1]
+  
+  
   
   ##name = "${docker_container.nodered_container.name}-volume"
   # This above create a cycle dependency problem with the volume_name above
@@ -214,7 +248,13 @@ resource "docker_volume" "container_volume" {
  # name = "${var.name_in}-${random_string.random[count.index].result}-volume"
   
   # I have added the workspace as well to the volume
-  name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
+  #name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
+  # DYNAMIC BLOCK (step 6). comment out the above
+  # for now just use the count.index as defined above based on the length(var.volumes_in)
+  name = "${var.name_in}-${terraform.workspace}-${count.index}-volume"
+  
+
+
 
 
   

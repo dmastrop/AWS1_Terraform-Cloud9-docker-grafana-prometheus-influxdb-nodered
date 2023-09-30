@@ -17,6 +17,8 @@ variable "ext_port_in" {
     
 }
 
+# DYNAMIC BLOCK (step 7). Comment out this container_path_in
+# We are using volumes_in instead (see below) with the dynamic block provisioning.
 variable "container_path_in" {
     
 }
@@ -32,4 +34,10 @@ variable "container_path_in" {
 # count_in that is used in the root/main.tf
 variable "count_in" {
     
+}
+
+# As part of DYNAMIC BLOCK (step 3) creation in root/locals.tf and root/main.tf we need to define the  
+# importation of volumes into this container module as volumes_in
+variable "volumes_in" {
+
 }

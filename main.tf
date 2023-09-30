@@ -718,7 +718,14 @@ module "container" {
   #container_path_in = "/data"
   
   # For STAGE 2:
-  container_path_in = each.value.container_path
+  #container_path_in = each.value.container_path
+    
+  # For DYNAMIC BLOCK (step 2), comment out container_path_in above
+  # use the volumes_in for the volumes that we configured in the root/locals.tf
+  volumes_in = each.value.volumes
+    
+    
+    
     
     
     

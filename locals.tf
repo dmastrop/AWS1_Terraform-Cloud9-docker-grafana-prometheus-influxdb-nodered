@@ -7,34 +7,38 @@
 
 locals {
   deployment = {
-    nodered = {
-      # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
-      # Need to add the key ["nodered"] as well into this container_count definition
-      container_count = length(var.ext_port["nodered"][terraform.workspace])
+    # nodered = {
+    #   # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
+    #   # Need to add the key ["nodered"] as well into this container_count definition
+    #   container_count = length(var.ext_port["nodered"][terraform.workspace])
       
-      image = var.image["nodered"][terraform.workspace]
+    #   image = var.image["nodered"][terraform.workspace]
       
-      int = 1880
-      ext = var.ext_port["nodered"][terraform.workspace]
-      # this keys into the terraform.tfvars
+    #   int = 1880
+    #   ext = var.ext_port["nodered"][terraform.workspace]
+    #   # this keys into the terraform.tfvars
       
-      container_path  = "/data"
-    }
+    #   container_path  = "/data"
+    # }
     
-    influxdb = {
-      # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
-      # Need to add the key ["influxdb"] as well into this container_count definition
-      container_count = length(var.ext_port["influxdb"][terraform.workspace])
     
-      image = var.image["influxdb"][terraform.workspace]
+    
+    # influxdb = {
+    #   # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
+    #   # Need to add the key ["influxdb"] as well into this container_count definition
+    #   container_count = length(var.ext_port["influxdb"][terraform.workspace])
+    
+    #   image = var.image["influxdb"][terraform.workspace]
       
-      int = 8086
-      ext = var.ext_port["influxdb"][terraform.workspace]
-      # this keys into the terraform.tfvars
+    #   int = 8086
+    #   ext = var.ext_port["influxdb"][terraform.workspace]
+    #   # this keys into the terraform.tfvars
       
-      container_path  = "/var/lib/influxdb"
-      # this is from the influxdb registry docs on docker
-    }
+    #   container_path  = "/var/lib/influxdb"
+    #   # this is from the influxdb registry docs on docker
+    # }
+    
+    
     
     grafana = {
       # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
@@ -47,21 +51,34 @@ locals {
       ext = var.ext_port["grafana"][terraform.workspace]
       # this keys into the terraform.tfvars
       
-      container_path  = "/var/lib/granfana"
+      #container_path  = "/var/lib/granfana"
+      
+      # DYNAMIC BLOCK (step 1) for the container_paths. This will permit us to specify multiple container_paths
+      # this block is created for each container, hence the name _each.
+      # We want to create a volume for each of the volumes below listed
+      # comment out the container_path above
+      volumes = [
+        {container_path_each = "/var/lib/grafana"},
+        {container_path_each = "etc/grafana"}
+      ]
     }
     
-    prometheus = {
-      # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
-      # Need to add the key ["grafana"] as well into this container_count definition
-      container_count = length(var.ext_port["prometheus"][terraform.workspace])
+    
+    
+    # prometheus = {
+    #   # incorporate count into the for_each setup.  Copy this container_count from the locals of the root/variables.tf
+    #   # Need to add the key ["grafana"] as well into this container_count definition
+    #   container_count = length(var.ext_port["prometheus"][terraform.workspace])
       
-      image = var.image["prometheus"][terraform.workspace]
+    #   image = var.image["prometheus"][terraform.workspace]
       
-      int = 9090
-      ext = var.ext_port["prometheus"][terraform.workspace]
-      # this keys into the terraform.tfvars
+    #   int = 9090
+    #   ext = var.ext_port["prometheus"][terraform.workspace]
+    #   # this keys into the terraform.tfvars
       
-      container_path  = "/opt/bitnami/prometheus/data"
-    }
-  }
-}
+    #   container_path  = "/opt/bitnami/prometheus/data"
+    # }
+    
+    
+  } # for deployment
+} # for locals
