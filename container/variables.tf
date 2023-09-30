@@ -19,9 +19,9 @@ variable "ext_port_in" {
 
 # DYNAMIC BLOCK (step 7). Comment out this container_path_in
 # We are using volumes_in instead (see below) with the dynamic block provisioning.
-variable "container_path_in" {
+#variable "container_path_in" {
     
-}
+#}
 
 # variable "host_path_in" {
     
