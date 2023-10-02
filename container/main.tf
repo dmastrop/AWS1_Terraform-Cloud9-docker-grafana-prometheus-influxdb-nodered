@@ -152,7 +152,7 @@ resource "docker_container" "app_container" {
   
   
   # Comment out the entire block above (volumes block) and convert this to a DYNAMIC BLOCK (step 4)
-  dynamic volumes {
+  dynamic "volumes" {
     for_each = var.volumes_in
     # this will do a for_each for the volumes listed in root/locals.tf and root/main.tf
     # for grafana this is the /var/lib/grafana and /etc/grafana
@@ -162,12 +162,20 @@ resource "docker_container" "app_container" {
       # these are the literal values of /var/lib/grafana and /etc/grafana
       
       #volume_name = docker_volume.container_volume[count.index].name
-      volume_name = docker_volume.container_volume[volumes.key].name
+      ##volume_name = docker_volume.container_volume[volumes.key].name
       # we are no longer using count.index
       # volumes.key is the number of volumes in each key (grafana, prometheus, influxdb, nodered) as
       # in the root/locals.tf. For grafana this is [0] and [1] for the 2 container_path_each
       
-      
+      # With the addtion of the module volume we no longer have docker_volume in this file
+      # So volume name above needs to be commented out and rewritten as call to the module.volume:
+      # note we are using the count for the number of containers count_in (see above)
+      volume_name = module.volume[count.index].volume_output[volumes.key]
+      # this creates the unique volume name set per container by calling the module.volume that we just created
+      # the volume_output is specified as the output in container/volume/outputs.tf file. This has the relevant
+      # volume name for the container instance that this module is creating.
+      # Note that the volumes.key as defined above will differentiate the multiple volumes per container.
+      # for example for grafana there is /var/lib/grafana and then /etc/grafana
     }
   }
   
@@ -215,94 +223,130 @@ resource "docker_container" "app_container" {
 
 
 
-resource "docker_volume" "container_volume" {
-# create a resource for the docker volume. This will ensure that the volumes are
-# added for each container and removed with each container during terraform destroy.
 
-# note: creating a volume resource in the container/main.tf does fix the problem that occurred
-# when using the null_resource local provisioner for the single "noderedvol".  This created resource
-# conflicts with multiple containers because a singe volume was being used for all the containers.
-# this no longer occurs with the volume resrouce.
-# https://www.udemy.com/course/terraform-certified/learn/lecture/23431936#questions/20465070
+module "volume" {
+  source  = "./volume"
+  # note that the docker_volume is in /container/volume/main.tf
+  count = var.count_in
+  # recall that count_in in defined in root/main.tf and passed into the container/main.tf
+  # count_in = each.value.container_count in root/main.tf. It is the number of containers for the key (application) in the map 
+  # container_count = length(var.ext_port["grafana"][terraform.workspace])  in the root/locals.tf based on the key (application)
+  # var.ext_port is defined in terraform.tfvars
+  # count_in is also used on the docker_container resource above
+  # We need it here because we need to create the length(var.volumes_in) per container
+  # var.volumes_in is used in the container/volume/main.tf that his is calling.
+  
+  volume_count = length(var.volumes_in)
+  # volume_count is the number of volumes that is required per container of this application
+  
+  volume_name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
+  # this is the volume name in the original docker_volume resource
+  # plus adding the random_string back in. (see the original docker_volume resource)
 
-  # As part of STAGE 3 of the module container, add back in the count logic
-  # See above. This has been added to the resource docker_container and the docker_volume and the 
-  # random_string.
-  
-  #count = var.count_in
-  # DYNAMIC BLOCK (step 5). commment out the above
-  count = length(var.volumes_in)
-  # for grafana this is equal to 2 and uses index [0] and [1]
-  
-  
-  
-  ##name = "${docker_container.nodered_container.name}-volume"
-  # This above create a cycle dependency problem with the volume_name above
-  # We can't create the container without the volume name and we cannot create the volume
-  # without the container name.   This syntax will not work.
-  # thus we need to remove this and use this:
-  
-  #name = "${var.name_in}-volume"
-  # For STAGE 3 of container module add in the random string with the count.index to ensure that 
-  # the volume name is unique per instance per applcation type (key or var.name_in)
- # name = "${var.name_in}-${random_string.random[count.index].result}-volume"
-  
-  # I have added the workspace as well to the volume
-  #name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
-  # DYNAMIC BLOCK (step 6). comment out the above
-  # for now just use the count.index as defined above based on the length(var.volumes_in)
-  name = "${var.name_in}-${terraform.workspace}-${count.index}-volume"
-  
+}
 
 
 
 
+
+
+
+
+
+
+# ## MOVE this entire docker_volume block from container/main.tf to
+# ## container/volume/main.tf. Then reference this docker_volume from this canatainer/main.tf
+# ## so that we create the number of volumes per instance container created for the app.  
+# ##  SEE ABOVE for the reference.
+
+# resource "docker_volume" "container_volume" {
+# # create a resource for the docker volume. This will ensure that the volumes are
+# # added for each container and removed with each container during terraform destroy.
+
+# # note: creating a volume resource in the container/main.tf does fix the problem that occurred
+# # when using the null_resource local provisioner for the single "noderedvol".  This created resource
+# # conflicts with multiple containers because a singe volume was being used for all the containers.
+# # this no longer occurs with the volume resrouce.
+# # https://www.udemy.com/course/terraform-certified/learn/lecture/23431936#questions/20465070
+
+#   # As part of STAGE 3 of the module container, add back in the count logic
+#   # See above. This has been added to the resource docker_container and the docker_volume and the 
+#   # random_string.
   
-  # to prevent the destruction of the volume with terraform destroy need to add lifecycle block below
-  # https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle
-  lifecycle {
-    #prevent_destroy = true
-    prevent_destroy = false
-    # put this to false for now because it prevents any type of destruction
-    # workaround it using the 
-    # terraform destroy -target=module.container[0].docker_container.nodered_container
-    # this is cumbersome but is very selective.
-  }
+#   #count = var.count_in
+#   # DYNAMIC BLOCK (step 5). commment out the above
+#   count = length(var.volumes_in)
+#   # for grafana this is equal to 2 and uses index [0] and [1]
   
-  # add a local provisioner to store the volume in a backup directory so that on terraform destroy
-  # we still have a copy of the volume data. THe data will be stored in a backup folder
-  provisioner "local-exec" {
-    when = destroy
-    #command = "mkdir ${path.cwd}/../backup/"
-    command = "mkdir ${path.cwd}/../backup_workspace_1/"
-    # the backup directory will be created one level up from current working directory which
-    # will be in the root workspace directory /home/ubuntu/environment/course7_terraform_docker
-    # terraform console: path.cwd = "/home/ubuntu/environment/course7_terraform_docker"
-    # We do not want to store backups in the git committed code directory.
-    # NOTE: with multiple containers there is a problem. The local provisioner errors stating that the 
-    # folder already exists after the first container
-    # Need to add the on_failure continue 
-    # note that this just creates the backup folder. The backups of the volumes still needs to be done
-    on_failure = continue
-  }
   
-  # add a second provisioner to backup the actual volumes of all the containers.
-  # must use the self object. Provisioner blocks cannot refer to parent resource by name
-  # https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax#the-self-object
-  # The parent resource here is docker_volume.container_volume
-  # We will use the self.name and self.mountpoint for the name and the mountpoint of each container volume that is
-  # being destroyed.  This will be stored in the backup directory as a tar file.
-  # the self.mountpoint is indicated in this document:
-  # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume#mountpoint
-  # both name and mountpoint are attributes of the docker_volume
-  # self.name refers to  name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
-  # self.mountpoint will be tarred and put in the folder of the volume of the same name
-  provisioner "local-exec" {
-    when = destroy
-    command = "sudo tar -czvf ${path.cwd}/../backup_workspace_1/${self.name}.tar.gz ${self.mountpoint}/"
-    #command = "sudo tar -czvf ${path.cwd}/../backup/${self.name}.tar.gz ${self.mountpoint}/"
-    on_failure = fail
-    # we want to know if this fails!!
-  }
   
-} # this is for the resource "docker_volume"
+#   ##name = "${docker_container.nodered_container.name}-volume"
+#   # This above create a cycle dependency problem with the volume_name above
+#   # We can't create the container without the volume name and we cannot create the volume
+#   # without the container name.   This syntax will not work.
+#   # thus we need to remove this and use this:
+  
+#   #name = "${var.name_in}-volume"
+#   # For STAGE 3 of container module add in the random string with the count.index to ensure that 
+#   # the volume name is unique per instance per applcation type (key or var.name_in)
+# # name = "${var.name_in}-${random_string.random[count.index].result}-volume"
+  
+#   # I have added the workspace as well to the volume
+#   #name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
+#   # DYNAMIC BLOCK (step 6). comment out the above
+#   # for now just use the count.index as defined above based on the length(var.volumes_in)
+#   name = "${var.name_in}-${terraform.workspace}-${count.index}-volume"
+  
+
+
+
+
+  
+#   # to prevent the destruction of the volume with terraform destroy need to add lifecycle block below
+#   # https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle
+#   lifecycle {
+#     #prevent_destroy = true
+#     prevent_destroy = false
+#     # put this to false for now because it prevents any type of destruction
+#     # workaround it using the 
+#     # terraform destroy -target=module.container[0].docker_container.nodered_container
+#     # this is cumbersome but is very selective.
+#   }
+  
+#   # add a local provisioner to store the volume in a backup directory so that on terraform destroy
+#   # we still have a copy of the volume data. THe data will be stored in a backup folder
+#   provisioner "local-exec" {
+#     when = destroy
+#     #command = "mkdir ${path.cwd}/../backup/"
+#     command = "mkdir ${path.cwd}/../backup_workspace_1/"
+#     # the backup directory will be created one level up from current working directory which
+#     # will be in the root workspace directory /home/ubuntu/environment/course7_terraform_docker
+#     # terraform console: path.cwd = "/home/ubuntu/environment/course7_terraform_docker"
+#     # We do not want to store backups in the git committed code directory.
+#     # NOTE: with multiple containers there is a problem. The local provisioner errors stating that the 
+#     # folder already exists after the first container
+#     # Need to add the on_failure continue 
+#     # note that this just creates the backup folder. The backups of the volumes still needs to be done
+#     on_failure = continue
+#   }
+  
+#   # add a second provisioner to backup the actual volumes of all the containers.
+#   # must use the self object. Provisioner blocks cannot refer to parent resource by name
+#   # https://developer.hashicorp.com/terraform/language/resources/provisioners/syntax#the-self-object
+#   # The parent resource here is docker_volume.container_volume
+#   # We will use the self.name and self.mountpoint for the name and the mountpoint of each container volume that is
+#   # being destroyed.  This will be stored in the backup directory as a tar file.
+#   # the self.mountpoint is indicated in this document:
+#   # https://registry.terraform.io/providers/kreuzwerker/docker/latest/docs/resources/volume#mountpoint
+#   # both name and mountpoint are attributes of the docker_volume
+#   # self.name refers to  name = "${var.name_in}-${terraform.workspace}-${random_string.random[count.index].result}-volume"
+#   # self.mountpoint will be tarred and put in the folder of the volume of the same name
+#   provisioner "local-exec" {
+#     when = destroy
+#     command = "sudo tar -czvf ${path.cwd}/../backup_workspace_1/${self.name}.tar.gz ${self.mountpoint}/"
+#     #command = "sudo tar -czvf ${path.cwd}/../backup/${self.name}.tar.gz ${self.mountpoint}/"
+#     on_failure = fail
+#     # we want to know if this fails!!
+#   }
+  
+# } # this is for the resource "docker_volume"
