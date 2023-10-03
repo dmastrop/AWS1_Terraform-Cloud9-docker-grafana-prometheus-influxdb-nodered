@@ -75,7 +75,12 @@ resource "docker_volume" "container_volume" {
   provisioner "local-exec" {
     when = destroy
     #command = "mkdir ${path.cwd}/../backup/"
-    command = "mkdir ${path.cwd}/../backup_workspace_1/"
+    
+    # FOR AWS project workspace change the folder to backup_worksapce_2 so that it does not conflict with 
+    # docker workspace project.
+    # command = "mkdir ${path.cwd}/../backup_workspace_1/"
+    command = "mkdir ${path.cwd}/../backup_workspace_2/"
+    
     # the backup directory will be created one level up from current working directory which
     # will be in the root workspace directory /home/ubuntu/environment/course7_terraform_docker
     # terraform console: path.cwd = "/home/ubuntu/environment/course7_terraform_docker"
@@ -100,7 +105,11 @@ resource "docker_volume" "container_volume" {
   # self.mountpoint will be tarred and put in the folder of the volume of the same name
   provisioner "local-exec" {
     when = destroy
-    command = "sudo tar -czvf ${path.cwd}/../backup_workspace_1/${self.name}.tar.gz ${self.mountpoint}/"
+    
+    # FOR AWS project workspace change the folder to backup_worksapce_2 so that it does not conflict with 
+    # docker workspace project.
+    #command = "sudo tar -czvf ${path.cwd}/../backup_workspace_1/${self.name}.tar.gz ${self.mountpoint}/"
+    command = "sudo tar -czvf ${path.cwd}/../backup_workspace_2/${self.name}.tar.gz ${self.mountpoint}/"
     #command = "sudo tar -czvf ${path.cwd}/../backup/${self.name}.tar.gz ${self.mountpoint}/"
     on_failure = fail
     # we want to know if this fails!!
